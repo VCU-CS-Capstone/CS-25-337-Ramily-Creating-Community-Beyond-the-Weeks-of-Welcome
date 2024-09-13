@@ -4,7 +4,7 @@ CS 25-337 Ramily: Creating Community Beyond the Weeks of Welcome
 Manjari Kumarappan
 ## **Students' Names:**
 Tariq Gafar
-#DaJuan Hackett
+# DaJuan Hackett
 Ziad Kashef
 Raleigh Norris
 ## **Mentor:**
