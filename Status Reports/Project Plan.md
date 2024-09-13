@@ -1,4 +1,5 @@
 # *CSnnn Project Name*
+CS 25-337 Ramily: Creating Community Beyond the Weeks of Welcome
 ## **Sponsor:**
 Manjari Kumarappan
 ## **Students' Names:**
