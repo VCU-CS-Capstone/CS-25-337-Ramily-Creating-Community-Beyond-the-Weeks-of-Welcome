@@ -11,9 +11,9 @@ Status Report Fall Week XX.md is a template for to copy-paste into new Status re
 
 | Document | Tasks | Accomplishments | Issues |
 |---|---|---|---|
-| Week 1 Status Report | We've accomplished a lot | We'll accomplish even more | No problems to report! |
-| Week 2 Status Report | | | |
-| Week 3 Status Report | | | |
+| Week 1 Status Report | Introductions & Complete Contract | Contract was completed besides part 2 | No problems to report|
+| Week 2 Status Report | Introduction with faculty advisor & sponsor | Learned about the project and completed contract | No problems to report|
+| Week 3 Status Report | Meet former da Vinci students | Learned in depth project details | No probkems to report |
 | Week 4 Status Report | | | |
 | Week 5 Status Report | | | |
 | Week 6 Status Report | | | |
