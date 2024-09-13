@@ -19,7 +19,7 @@ Freshmen and transfer students are seeking a deeper sense of belonging and commu
 ## **Deliverables**
 Working prototype with close-to-final UX/UI design
 Show test plans and feedback from iterative testing of the prototype/design with potential end-users
-**Coding Plan**
+## **Coding Plan**
 
 | Week | Tasks | Goals |
 |------|-------|-------|
