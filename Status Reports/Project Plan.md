@@ -1,7 +1,7 @@
 # *CSnnn Project Name*
 ## **Sponsor:**
 Manjari Kumarappan
-**Students' Names:**
+## **Students' Names:**
 Tariq Gafar
 DaJuan Hackett
 Ziad Kashef
