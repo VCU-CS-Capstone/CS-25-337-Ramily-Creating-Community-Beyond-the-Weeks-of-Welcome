@@ -1,4 +1,4 @@
-# *CS 25-XXX Project Name*
+# *CS 25-337 Ramily: Creating Community Beyond the Weeks of Welcome*
 
 # **Students' Names:**
 Tariq Gafar<br />
