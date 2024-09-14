@@ -6,9 +6,9 @@ Tariq Gafar<br />
 DaJuan Hackett<br />
 Ziad Kashef<br />
 Raleigh Norris
-## **Mentor:**
-N/A
-## **Faculty Advisor:**
+**Mentor:**
+Manjari Kumarappan
+**Faculty Advisor:**
 Lukasz Kurgan
 ## **Project:**
 CS 25-337 Ramily: Creating Community Beyond the Weeks of Welcome
