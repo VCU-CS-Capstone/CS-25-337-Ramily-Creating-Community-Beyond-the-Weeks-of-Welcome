@@ -17,7 +17,7 @@ Lukasz Kurgan
 
 ## 2) Milestones to be completed next week ##
    - Gather a list of priorities for the features to implement during the project
-   - Get the api to existing VCU features
+   - Get access to the API to existing VCU features
 
 ## 3) Issues, problems or concerns ##
    - Too many features to implement within 2 semesters therefore a priority list is needed
