@@ -6,7 +6,7 @@ Tariq Gafar<br />
 DaJuan Hackett<br />
 Ziad Kashef<br />
 Raleigh Norris <br />
-<br />
+
 **Mentor:**
 Manjari Kumarappan<br />
 
