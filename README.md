@@ -1,4 +1,4 @@
-# *Your Project Description*
+# *CS25-337 Project Description*
 Freshmen and transfer students are seeking a deeper sense of belonging and community, as well as better connection to opportunities available during their time at VCU. Students shared that they felt overwhelmed having to figure out their academic, professional, and social lives all at once, especially in their first year at VCU. Students said that they also felt overwhelmed by the number of resources on campus. For example, students named 22 mobile apps that they had downloaded and used as they were trying to settle into life at VCU. da Vinci student teams proposed a homegrown, VCU mobile app that integrates key features from VCU Mobile (e.g., class schedule) and RamsConnect (e.g., student groups), and newly designed features aimed at enhancing students’ sense of belonging at VCU. The ultimate impact being facilitating a deeper connection between students & campus environment, improved mental health & student academic success, and improved student retention.
 ## *Sponsoring Company or Organization*
 VCU da Vinci Center for Innovation
