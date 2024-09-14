@@ -5,7 +5,7 @@ Manjari Kumarappan
 Tariq Gafar<br />
 DaJuan Hackett<br />
 Ziad Kashef<br />
-Raleigh Norris
+Raleigh Norris <br />
 **Mentor:**
 Manjari Kumarappan
 **Faculty Advisor:**
