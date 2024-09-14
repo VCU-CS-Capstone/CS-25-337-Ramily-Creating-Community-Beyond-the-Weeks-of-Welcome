@@ -1,21 +1,26 @@
 # *CS 25-XXX Project Name*
 
 **Students' Names:**
+Tariq Gafar<br />
+DaJuan Hackett<br />
+Ziad Kashef<br />
+Raleigh Norris
 
 **Mentor:**
+Manjari Kumarappan
 
 **Faculty Advisor:**
+Lukasz Kurgan
 
 ## 1) Accomplishments this week ##
-   - investigate databases done by student A
-   - make flowcharts done by students A and B
+   - Met former VCU alumni who worked on the UI design and got an in depth view of their work.
 
 ## 2) Milestones to be completed next week ##
-   - debug the code to be performed by student C
+   - Gather a list of priorities for the features to implement during the project
+   - Get the api to existing VCU features
 
 ## 3) Issues, problems or concerns ##
-   - student C needs to learn java
-   - database repository costs big $$$
+   - Too many features to implement within 2 semesters therefore a priority list is needed
    
 
 
