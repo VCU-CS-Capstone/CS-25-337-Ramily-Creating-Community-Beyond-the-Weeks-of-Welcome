@@ -1,6 +1,6 @@
 # *CS 25-XXX Project Name*
 
-**Students' Names:**
+# **Students' Names:**
 Tariq Gafar<br />
 DaJuan Hackett<br />
 Ziad Kashef<br />
