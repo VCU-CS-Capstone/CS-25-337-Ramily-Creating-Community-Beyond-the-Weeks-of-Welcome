@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 
 class HomeScreen extends StatelessWidget {
-  final String title;
-
-  HomeScreen({this.title = 'Home'});
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // Optional: Prevent user from navigating back to Profile Creation
+      // by removing the back button in the AppBar
       appBar: AppBar(
         title: Text('RAMily Home'),
         automaticallyImplyLeading: false, // Hides the back button
@@ -15,7 +13,10 @@ class HomeScreen extends StatelessWidget {
       body: Center(
         child: Text(
           'Welcome to RAMily!',
-          style: TextStyle(fontSize: 24.0),
+          style: TextStyle(
+            fontSize: 24.0,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
     );
