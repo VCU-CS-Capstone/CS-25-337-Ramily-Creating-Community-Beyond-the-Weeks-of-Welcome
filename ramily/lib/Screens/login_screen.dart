@@ -57,8 +57,19 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              // Logo or App Name
               SizedBox(height: 40.0),
+
+              // Logo Image
+              Center(
+                child: Image.asset(
+                  'assets/logo.png',
+                  height: 100.0, // Adjust the height as needed
+                ),
+              ),
+
+              SizedBox(height: 20.0),
+
+              // Welcome Text
               Text(
                 'Welcome to RAMily',
                 textAlign: TextAlign.center,
@@ -67,6 +78,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
+
               SizedBox(height: 40.0),
 
               // Email field
@@ -90,6 +102,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   return null;
                 },
               ),
+
               SizedBox(height: 16.0),
 
               // Password field
@@ -106,10 +119,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   if (value == null || value.isEmpty) {
                     return 'Please enter your password';
                   }
-                  // Add more validation if needed
                   return null;
                 },
               ),
+
               SizedBox(height: 32.0),
 
               // Login button
