@@ -276,10 +276,13 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
               SizedBox(height: 16.0),
 
               // Bio Field
+              // Bio Field
               TextFormField(
                 controller: _bioController,
                 decoration: InputDecoration(
                   labelText: 'Bio',
+                  hintText: 'e.g., Passionate about technology and music. Love hiking on weekends.',
+                  hintStyle: TextStyle(color: Colors.grey[600]), // Grayed-out text
                   prefixIcon: Icon(Icons.info),
                   border: OutlineInputBorder(),
                 ),
