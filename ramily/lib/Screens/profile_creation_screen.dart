@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'home_screen.dart'; // Import the HomeScreen
+import 'home_screen.dart';
 
 class ProfileCreationScreen extends StatefulWidget {
   @override
@@ -16,6 +16,7 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _bioController = TextEditingController();
+  final TextEditingController _customInterestController = TextEditingController();
 
   // Profile Picture
   File? _profileImage;
@@ -42,7 +43,7 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
   ];
 
   // List of interests
-  final List<String> _interests = [
+  final List<String> _availableInterests = [
     'Sports',
     'Music',
     'Art',
@@ -63,14 +64,17 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
   // Selected values
   String? _selectedMajor;
   String? _selectedPronoun;
-  String? _selectedInterest1;
-  String? _selectedInterest2;
-  String? _selectedInterest3;
-  String? _selectedInterest4;
+  Set<String> _selectedInterests = Set<String>();
+
+  // Custom Interests
+  int _customInterestsCount = 0;
+  final int _maxCustomInterests = 2;
+  final int _customInterestCharLimit = 15;
+  final int _maxTotalInterests = 4; // Total interests limit
 
   final ImagePicker _picker = ImagePicker();
 
-  // Functions to pick image from gallery or camera
+  // Function to pick image from gallery or camera
   Future<void> _pickImage() async {
     showModalBottomSheet(
       context: context,
@@ -113,7 +117,24 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
 
   void _submitProfile() {
     if (_formKey.currentState!.validate()) {
-      // Handle profile submission logic here (e.g., send data to backend)
+      if (_selectedInterests.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Please select at least one interest')),
+        );
+        return;
+      }
+
+      // Collect all the data
+      final profileData = {
+        'name': _nameController.text.trim(),
+        'email': _emailController.text.trim(),
+        'major': _selectedMajor,
+        'pronouns': _selectedPronoun,
+        'bio': _bioController.text.trim(),
+        'interests': _selectedInterests.toList(),
+      };
+
+      // Handle profile submission logic here
 
       // Show a success message
       ScaffoldMessenger.of(context).showSnackBar(
@@ -121,35 +142,9 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
       );
 
       // Navigate to Home Screen
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => HomeScreen()),
-      );
+      Navigator.pushReplacementNamed(context, '/home');
     }
   }
-
-  // Helper methods to get available interests for each dropdown to prevent duplicates
-  List<String> get _availableInterests1 => _interests;
-  List<String> get _availableInterests2 => _selectedInterest1 != null
-      ? _interests.where((interest) => interest != _selectedInterest1).toList()
-      : _interests;
-  List<String> get _availableInterests3 => _selectedInterest1 != null &&
-          _selectedInterest2 != null
-      ? _interests
-          .where((interest) =>
-              interest != _selectedInterest1 && interest != _selectedInterest2)
-          .toList()
-      : _interests;
-  List<String> get _availableInterests4 => _selectedInterest1 != null &&
-          _selectedInterest2 != null &&
-          _selectedInterest3 != null
-      ? _interests
-          .where((interest) =>
-              interest != _selectedInterest1 &&
-              interest != _selectedInterest2 &&
-              interest != _selectedInterest3)
-          .toList()
-      : _interests;
 
   @override
   Widget build(BuildContext context) {
@@ -276,13 +271,13 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
               SizedBox(height: 16.0),
 
               // Bio Field
-              // Bio Field
               TextFormField(
                 controller: _bioController,
                 decoration: InputDecoration(
                   labelText: 'Bio',
-                  hintText: 'e.g., Passionate about technology and music. Love hiking on weekends.',
-                  hintStyle: TextStyle(color: Colors.grey[600]), // Grayed-out text
+                  hintText:
+                      'e.g., Passionate about technology and music. Love hiking on weekends.',
+                  hintStyle: TextStyle(color: Colors.grey[600]),
                   prefixIcon: Icon(Icons.info),
                   border: OutlineInputBorder(),
                 ),
@@ -302,108 +297,156 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
               ),
               SizedBox(height: 8.0),
 
-              // Interest 1
-              DropdownButtonFormField<String>(
-                decoration: InputDecoration(
-                  labelText: 'Interest 1',
-                  prefixIcon: Icon(Icons.interests),
-                  border: OutlineInputBorder(),
+              // Interest Selection Grid
+              GridView.builder(
+                shrinkWrap: true,
+                physics: NeverScrollableScrollPhysics(),
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 3, // Number of columns
+                  crossAxisSpacing: 8.0,
+                  mainAxisSpacing: 8.0,
+                  childAspectRatio: 2.5, // Adjust as needed
                 ),
-                value: _selectedInterest1,
-                items: _availableInterests1
-                    .map((interest) => DropdownMenuItem(
-                          value: interest,
-                          child: Text(interest),
-                        ))
-                    .toList(),
-                onChanged: (value) {
-                  setState(() {
-                    _selectedInterest1 = value;
-                    // Reset subsequent interests if necessary
-                    _selectedInterest2 = null;
-                    _selectedInterest3 = null;
-                    _selectedInterest4 = null;
-                  });
+                itemCount: _availableInterests.length,
+                itemBuilder: (context, index) {
+                  final interest = _availableInterests[index];
+                  final isSelected = _selectedInterests.contains(interest);
+                  return GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        if (isSelected) {
+                          _selectedInterests.remove(interest);
+                        } else {
+                          if (_selectedInterests.length < _maxTotalInterests) {
+                            _selectedInterests.add(interest);
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                  content: Text(
+                                      'You can select up to $_maxTotalInterests interests in total')),
+                            );
+                          }
+                        }
+                      });
+                    },
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color:
+                            isSelected ? Colors.indigo : Colors.grey[200],
+                        borderRadius: BorderRadius.circular(8.0),
+                        boxShadow: isSelected
+                            ? [
+                                BoxShadow(
+                                  color: Colors.black26,
+                                  offset: Offset(0, 4),
+                                  blurRadius: 4.0,
+                                ),
+                              ]
+                            : null,
+                      ),
+                      child: Center(
+                        child: Text(
+                          interest,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: isSelected ? Colors.white : Colors.black,
+                            fontWeight: isSelected
+                                ? FontWeight.bold
+                                : FontWeight.normal,
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
                 },
-                validator: (value) =>
-                    value == null ? 'Please select an interest' : null,
               ),
               SizedBox(height: 16.0),
 
-              // Interest 2
-              DropdownButtonFormField<String>(
+              // Custom Interest Input
+              TextField(
+                controller: _customInterestController,
+                maxLength: _customInterestCharLimit,
                 decoration: InputDecoration(
-                  labelText: 'Interest 2',
-                  prefixIcon: Icon(Icons.interests),
+                  labelText: 'Add Custom Interest',
+                  hintText:
+                      'Enter your interest (max $_customInterestCharLimit chars)',
+                  prefixIcon: Icon(Icons.add),
                   border: OutlineInputBorder(),
+                  counterText: '', // Hide character counter
+                  suffixIcon: IconButton(
+                    icon: Icon(Icons.check),
+                    onPressed: _customInterestsCount < _maxCustomInterests
+                        ? () {
+                            final customInterest =
+                                _customInterestController.text.trim();
+                            if (customInterest.isNotEmpty) {
+                              if (customInterest.length >
+                                  _customInterestCharLimit) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                      content: Text(
+                                          'Interest must be less than $_customInterestCharLimit characters')),
+                                );
+                                return;
+                              }
+                              if (_selectedInterests.contains(customInterest) ||
+                                  _availableInterests.contains(customInterest)) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                      content:
+                                          Text('Interest already added')),
+                                );
+                              } else if (_selectedInterests.length <
+                                  _maxTotalInterests) {
+                                setState(() {
+                                  _selectedInterests.add(customInterest);
+                                  _customInterestsCount++;
+                                  _customInterestController.clear();
+                                });
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                      content: Text(
+                                          'You can select up to $_maxTotalInterests interests in total')),
+                                );
+                              }
+                            }
+                          }
+                        : null, // Disable button if limit reached
+                  ),
                 ),
-                value: _selectedInterest2,
-                items: _availableInterests2
-                    .map((interest) => DropdownMenuItem(
-                          value: interest,
-                          child: Text(interest),
-                        ))
-                    .toList(),
-                onChanged: (value) {
-                  setState(() {
-                    _selectedInterest2 = value;
-                    // Reset subsequent interests if necessary
-                    _selectedInterest3 = null;
-                    _selectedInterest4 = null;
-                  });
-                },
-                validator: (value) =>
-                    value == null ? 'Please select an interest' : null,
               ),
               SizedBox(height: 16.0),
 
-              // Interest 3
-              DropdownButtonFormField<String>(
-                decoration: InputDecoration(
-                  labelText: 'Interest 3',
-                  prefixIcon: Icon(Icons.interests),
-                  border: OutlineInputBorder(),
+              // Display Selected Interests
+              Text(
+                'Selected Interests (${_selectedInterests.length}/$_maxTotalInterests):',
+                style: TextStyle(
+                  fontSize: 16.0,
+                  fontWeight: FontWeight.bold,
                 ),
-                value: _selectedInterest3,
-                items: _availableInterests3
-                    .map((interest) => DropdownMenuItem(
-                          value: interest,
-                          child: Text(interest),
-                        ))
-                    .toList(),
-                onChanged: (value) {
-                  setState(() {
-                    _selectedInterest3 = value;
-                    // Reset subsequent interests if necessary
-                    _selectedInterest4 = null;
-                  });
-                },
-                validator: (value) =>
-                    value == null ? 'Please select an interest' : null,
               ),
-              SizedBox(height: 16.0),
-
-              // Interest 4
-              DropdownButtonFormField<String>(
-                decoration: InputDecoration(
-                  labelText: 'Interest 4',
-                  prefixIcon: Icon(Icons.interests),
-                  border: OutlineInputBorder(),
-                ),
-                value: _selectedInterest4,
-                items: _availableInterests4
-                    .map((interest) => DropdownMenuItem(
-                          value: interest,
-                          child: Text(interest),
-                        ))
-                    .toList(),
-                onChanged: (value) {
-                  setState(() {
-                    _selectedInterest4 = value;
-                  });
-                },
-                validator: (value) =>
-                    value == null ? 'Please select an interest' : null,
+              SizedBox(height: 8.0),
+              Wrap(
+                spacing: 8.0,
+                runSpacing: 8.0,
+                children: _selectedInterests.map((interest) {
+                  final isCustomInterest =
+                      !_availableInterests.contains(interest);
+                  return Chip(
+                    label: Text(interest),
+                    backgroundColor:
+                        isCustomInterest ? Colors.orangeAccent : null,
+                    onDeleted: () {
+                      setState(() {
+                        _selectedInterests.remove(interest);
+                        if (isCustomInterest) {
+                          _customInterestsCount--;
+                        }
+                      });
+                    },
+                  );
+                }).toList(),
               ),
               SizedBox(height: 32.0),
 
