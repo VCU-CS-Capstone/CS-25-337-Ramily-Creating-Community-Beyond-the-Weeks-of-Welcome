@@ -1,8 +1,10 @@
-import 'dart:io';
+// lib/screens/profile_creation_screen.dart
 
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'home_screen.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ProfileCreationScreen extends StatefulWidget {
   @override
@@ -17,6 +19,14 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _bioController = TextEditingController();
   final TextEditingController _customInterestController = TextEditingController();
+
+  // Privacy policy-related state
+  bool _privacyPolicyClicked = false;
+  bool _privacyPolicyChecked = false;
+
+  // Disclosure of student contact information-related state
+  bool _contactInfoPolicyClicked = false;
+  bool _contactInfoPolicyChecked = false;
 
   // Profile Picture
   File? _profileImage;
@@ -76,6 +86,7 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
 
   // Function to pick image from gallery or camera
   Future<void> _pickImage() async {
+    // Show the bottom sheet to choose from Gallery or Camera
     showModalBottomSheet(
       context: context,
       builder: (context) => SafeArea(
@@ -86,8 +97,10 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
               title: Text('Choose from Gallery'),
               onTap: () async {
                 Navigator.of(context).pop();
-                final XFile? image =
-                    await _picker.pickImage(source: ImageSource.gallery);
+                // Pick image from the gallery (default behavior)
+                final XFile? image = await _picker.pickImage(
+                  source: ImageSource.gallery,
+                );
                 if (image != null) {
                   setState(() {
                     _profileImage = File(image.path);
@@ -100,8 +113,10 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
               title: Text('Take a Photo'),
               onTap: () async {
                 Navigator.of(context).pop();
-                final XFile? image =
-                    await _picker.pickImage(source: ImageSource.camera);
+                // Pick image from the camera
+                final XFile? image = await _picker.pickImage(
+                  source: ImageSource.camera,
+                );
                 if (image != null) {
                   setState(() {
                     _profileImage = File(image.path);
@@ -116,7 +131,7 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
   }
 
   void _submitProfile() {
-    if (_formKey.currentState!.validate()) {
+    if (_formKey.currentState!.validate() && _privacyPolicyChecked && _contactInfoPolicyChecked) {
       if (_selectedInterests.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Please select at least one interest')),
@@ -135,6 +150,7 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
       };
 
       // Handle profile submission logic here
+      // For example, send data to a server or save locally
 
       // Show a success message
       ScaffoldMessenger.of(context).showSnackBar(
@@ -142,7 +158,48 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
       );
 
       // Navigate to Home Screen
-      Navigator.pushReplacementNamed(context, '/home');
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => HomeScreen()),
+      );
+    } else if (!_privacyPolicyChecked) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Please agree to the privacy policy')),
+      );
+    } else if (!_contactInfoPolicyChecked) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Please agree to the Disclosure of student contact information')),
+      );
+    }
+  }
+
+  // Function to open privacy policy link
+  Future<void> _openPrivacyPolicy() async {
+    const url = 'https://www.vcu.edu/privacy-statement/#:~:text=Commitment%20to%20privacy,only%20to%20the%20extent%20necessary'; // VCU Privacy Policy
+    if (await canLaunch(url)) {
+      await launch(url);
+      setState(() {
+        _privacyPolicyClicked = true;
+      });
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not open the link')),
+      );
+    }
+  }
+
+  // Function to open disclosure policy link
+  Future<void> _openContactInfoPolicy() async {
+    const url = 'https://registrar.vcu.edu/records/family-educational-rights-and-privacy-act/student-contact-information/'; // Student Contact Disclosure
+    if (await canLaunch(url)) {
+      await launch(url);
+      setState(() {
+        _contactInfoPolicyClicked = true;
+      });
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not open the link')),
+      );
     }
   }
 
@@ -265,9 +322,55 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
                     _selectedPronoun = value;
                   });
                 },
-                validator: (value) =>
-                    value == null ? 'Please select your pronouns' : null,
               ),
+              SizedBox(height: 16.0),
+
+              // Interests Checkbox
+              Text('Select Interests:'),
+              Wrap(
+                children: _availableInterests.map((interest) {
+                  return Padding(
+                    padding: const EdgeInsets.all(4.0),
+                    child: FilterChip(
+                      label: Text(interest),
+                      selected: _selectedInterests.contains(interest),
+                      onSelected: (selected) {
+                        setState(() {
+                          if (selected) {
+                            if (_selectedInterests.length < _maxTotalInterests) {
+                              _selectedInterests.add(interest);
+                            }
+                          } else {
+                            _selectedInterests.remove(interest);
+                          }
+                        });
+                      },
+                    ),
+                  );
+                }).toList(),
+              ),
+              SizedBox(height: 16.0),
+
+              // Custom Interest (Allow up to 2 additional interests)
+              if (_customInterestsCount < _maxCustomInterests)
+                TextFormField(
+                  controller: _customInterestController,
+                  decoration: InputDecoration(
+                    labelText: 'Custom Interest',
+                    prefixIcon: Icon(Icons.add),
+                    border: OutlineInputBorder(),
+                  ),
+                  maxLength: _customInterestCharLimit,
+                  onChanged: (value) {
+                    setState(() {});
+                  },
+                  validator: (value) {
+                    if (value != null && value.isNotEmpty) {
+                      return null;
+                    }
+                    return 'Please enter a custom interest';
+                  },
+                ),
               SizedBox(height: 16.0),
 
               // Bio Field
@@ -277,190 +380,79 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
                   labelText: 'Bio',
                   hintText:
                       'e.g., Passionate about technology and music. Love hiking on weekends.',
-                  hintStyle: TextStyle(color: Colors.grey[600]),
+                    hintStyle: TextStyle(color: Colors.grey[600]),
                   prefixIcon: Icon(Icons.info),
                   border: OutlineInputBorder(),
                 ),
+                maxLength: 100,
                 maxLines: 4,
                 validator: (value) =>
                     value == null || value.isEmpty ? 'Enter a bio' : null,
               ),
-              SizedBox(height: 16.0),
+              SizedBox(height: 24.0),
 
-              // Interests Section
-              Text(
-                'Select Your Interests',
-                style: TextStyle(
-                  fontSize: 16.0,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              SizedBox(height: 8.0),
-
-              // Interest Selection Grid
-              GridView.builder(
-                shrinkWrap: true,
-                physics: NeverScrollableScrollPhysics(),
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3, // Number of columns
-                  crossAxisSpacing: 8.0,
-                  mainAxisSpacing: 8.0,
-                  childAspectRatio: 2.5, // Adjust as needed
-                ),
-                itemCount: _availableInterests.length,
-                itemBuilder: (context, index) {
-                  final interest = _availableInterests[index];
-                  final isSelected = _selectedInterests.contains(interest);
-                  return GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        if (isSelected) {
-                          _selectedInterests.remove(interest);
-                        } else {
-                          if (_selectedInterests.length < _maxTotalInterests) {
-                            _selectedInterests.add(interest);
-                          } else {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                  content: Text(
-                                      'You can select up to $_maxTotalInterests interests in total')),
-                            );
+              // Privacy Policy Checkbox
+              Row(
+                children: [
+                  Checkbox(
+                    value: _privacyPolicyChecked,
+                    onChanged: _privacyPolicyClicked
+                        ? (bool? value) {
+                            setState(() {
+                              _privacyPolicyChecked = value!;
+                            });
                           }
-                        }
-                      });
-                    },
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color:
-                            isSelected ? Colors.indigo : Colors.grey[200],
-                        borderRadius: BorderRadius.circular(8.0),
-                        boxShadow: isSelected
-                            ? [
-                                BoxShadow(
-                                  color: Colors.black26,
-                                  offset: Offset(0, 4),
-                                  blurRadius: 4.0,
-                                ),
-                              ]
-                            : null,
-                      ),
-                      child: Center(
-                        child: Text(
-                          interest,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: isSelected ? Colors.white : Colors.black,
-                            fontWeight: isSelected
-                                ? FontWeight.bold
-                                : FontWeight.normal,
-                          ),
+                        : null,
+                  ),
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: _openPrivacyPolicy,
+                      child: Text(
+                        'I agree to the privacy policy.',
+                        style: TextStyle(
+                          color: Colors.blue,
+                          decoration: TextDecoration.underline,
                         ),
                       ),
                     ),
-                  );
-                },
-              ),
-              SizedBox(height: 16.0),
-
-              // Custom Interest Input
-              TextField(
-                controller: _customInterestController,
-                maxLength: _customInterestCharLimit,
-                decoration: InputDecoration(
-                  labelText: 'Add Custom Interest',
-                  hintText:
-                      'Enter your interest (max $_customInterestCharLimit chars)',
-                  prefixIcon: Icon(Icons.add),
-                  border: OutlineInputBorder(),
-                  counterText: '', // Hide character counter
-                  suffixIcon: IconButton(
-                    icon: Icon(Icons.check),
-                    onPressed: _customInterestsCount < _maxCustomInterests
-                        ? () {
-                            final customInterest =
-                                _customInterestController.text.trim();
-                            if (customInterest.isNotEmpty) {
-                              if (customInterest.length >
-                                  _customInterestCharLimit) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                      content: Text(
-                                          'Interest must be less than $_customInterestCharLimit characters')),
-                                );
-                                return;
-                              }
-                              if (_selectedInterests.contains(customInterest) ||
-                                  _availableInterests.contains(customInterest)) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                      content:
-                                          Text('Interest already added')),
-                                );
-                              } else if (_selectedInterests.length <
-                                  _maxTotalInterests) {
-                                setState(() {
-                                  _selectedInterests.add(customInterest);
-                                  _customInterestsCount++;
-                                  _customInterestController.clear();
-                                });
-                              } else {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                      content: Text(
-                                          'You can select up to $_maxTotalInterests interests in total')),
-                                );
-                              }
-                            }
-                          }
-                        : null, // Disable button if limit reached
                   ),
-                ),
+                ],
               ),
-              SizedBox(height: 16.0),
 
-              // Display Selected Interests
-              Text(
-                'Selected Interests (${_selectedInterests.length}/$_maxTotalInterests):',
-                style: TextStyle(
-                  fontSize: 16.0,
-                  fontWeight: FontWeight.bold,
-                ),
+              // Disclosure of student contact information Checkbox
+              Row(
+                children: [
+                  Checkbox(
+                    value: _contactInfoPolicyChecked,
+                    onChanged: _contactInfoPolicyClicked
+                        ? (bool? value) {
+                            setState(() {
+                              _contactInfoPolicyChecked = value!;
+                            });
+                          }
+                        : null,
+                  ),
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: _openContactInfoPolicy,
+                      child: Text(
+                        'I agree to the Disclosure of student contact information.',
+                        style: TextStyle(
+                          color: Colors.blue,
+                          decoration: TextDecoration.underline,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              SizedBox(height: 8.0),
-              Wrap(
-                spacing: 8.0,
-                runSpacing: 8.0,
-                children: _selectedInterests.map((interest) {
-                  final isCustomInterest =
-                      !_availableInterests.contains(interest);
-                  return Chip(
-                    label: Text(interest),
-                    backgroundColor:
-                        isCustomInterest ? Colors.orangeAccent : null,
-                    onDeleted: () {
-                      setState(() {
-                        _selectedInterests.remove(interest);
-                        if (isCustomInterest) {
-                          _customInterestsCount--;
-                        }
-                      });
-                    },
-                  );
-                }).toList(),
-              ),
-              SizedBox(height: 32.0),
+
+              SizedBox(height: 16.0),
 
               // Submit Button
-              SizedBox(
-                width: double.infinity, // Makes the button take full width
-                child: ElevatedButton(
-                  onPressed: _submitProfile,
-                  child: Text('Submit'),
-                  style: ElevatedButton.styleFrom(
-                    padding: EdgeInsets.symmetric(vertical: 16.0),
-                    textStyle: TextStyle(fontSize: 18.0),
-                  ),
-                ),
+              ElevatedButton(
+                onPressed: _submitProfile,
+                child: Text('Submit'),
               ),
             ],
           ),

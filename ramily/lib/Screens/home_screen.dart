@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ramily/Screens/login_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   @override
@@ -9,6 +10,16 @@ class HomeScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text('RAMily Home'),
         automaticallyImplyLeading: false, // Hides the back button
+        leading: IconButton(
+            icon: Icon(Icons.logout),
+            onPressed: () {
+              // Navigate back to the LoginScreen
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => LoginScreen())
+              );
+            }
+          )
       ),
       body: Center(
         child: Text(
