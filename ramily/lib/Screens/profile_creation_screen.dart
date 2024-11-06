@@ -71,10 +71,12 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
     'Writing',
   ];
 
+  // Selected interests
+  Set<String> _selectedInterests = Set<String>();
+
   // Selected values
   String? _selectedMajor;
   String? _selectedPronoun;
-  Set<String> _selectedInterests = Set<String>();
 
   // Custom Interests
   int _customInterestsCount = 0;
@@ -175,7 +177,7 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
 
   // Function to open privacy policy link
   Future<void> _openPrivacyPolicy() async {
-    const url = 'https://www.vcu.edu/privacy-statement/#:~:text=Commitment%20to%20privacy,only%20to%20the%20extent%20necessary'; // VCU Privacy Policy
+    const url = 'https://www.vcu.edu/privacy-statement/';
     if (await canLaunch(url)) {
       await launch(url);
       setState(() {
@@ -190,7 +192,7 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
 
   // Function to open disclosure policy link
   Future<void> _openContactInfoPolicy() async {
-    const url = 'https://registrar.vcu.edu/records/family-educational-rights-and-privacy-act/student-contact-information/'; // Student Contact Disclosure
+    const url = 'https://registrar.vcu.edu/records/family-educational-rights-and-privacy-act/student-contact-information/';
     if (await canLaunch(url)) {
       await launch(url);
       setState(() {
@@ -325,54 +327,6 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
               ),
               SizedBox(height: 16.0),
 
-              // Interests Checkbox
-              Text('Select Interests:'),
-              Wrap(
-                children: _availableInterests.map((interest) {
-                  return Padding(
-                    padding: const EdgeInsets.all(4.0),
-                    child: FilterChip(
-                      label: Text(interest),
-                      selected: _selectedInterests.contains(interest),
-                      onSelected: (selected) {
-                        setState(() {
-                          if (selected) {
-                            if (_selectedInterests.length < _maxTotalInterests) {
-                              _selectedInterests.add(interest);
-                            }
-                          } else {
-                            _selectedInterests.remove(interest);
-                          }
-                        });
-                      },
-                    ),
-                  );
-                }).toList(),
-              ),
-              SizedBox(height: 16.0),
-
-              // Custom Interest (Allow up to 2 additional interests)
-              if (_customInterestsCount < _maxCustomInterests)
-                TextFormField(
-                  controller: _customInterestController,
-                  decoration: InputDecoration(
-                    labelText: 'Custom Interest',
-                    prefixIcon: Icon(Icons.add),
-                    border: OutlineInputBorder(),
-                  ),
-                  maxLength: _customInterestCharLimit,
-                  onChanged: (value) {
-                    setState(() {});
-                  },
-                  validator: (value) {
-                    if (value != null && value.isNotEmpty) {
-                      return null;
-                    }
-                    return 'Please enter a custom interest';
-                  },
-                ),
-              SizedBox(height: 16.0),
-
               // Bio Field
               TextFormField(
                 controller: _bioController,
@@ -380,7 +334,7 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
                   labelText: 'Bio',
                   hintText:
                       'e.g., Passionate about technology and music. Love hiking on weekends.',
-                    hintStyle: TextStyle(color: Colors.grey[600]),
+                  hintStyle: TextStyle(color: Colors.grey[600]),
                   prefixIcon: Icon(Icons.info),
                   border: OutlineInputBorder(),
                 ),
@@ -389,17 +343,179 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
                 validator: (value) =>
                     value == null || value.isEmpty ? 'Enter a bio' : null,
               ),
-              SizedBox(height: 24.0),
+              SizedBox(height: 16.0),
+
+              // Interests Section
+              Text(
+                'Select Your Interests',
+                style: TextStyle(
+                  fontSize: 16.0,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              SizedBox(height: 8.0),
+
+              // Interest Selection Grid
+              GridView.builder(
+                shrinkWrap: true,
+                physics: NeverScrollableScrollPhysics(),
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 3, // Number of columns
+                  crossAxisSpacing: 8.0,
+                  mainAxisSpacing: 8.0,
+                  childAspectRatio: 2.5, // Adjust as needed
+                ),
+                itemCount: _availableInterests.length,
+                itemBuilder: (context, index) {
+                  final interest = _availableInterests[index];
+                  final isSelected = _selectedInterests.contains(interest);
+                  return GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        if (isSelected) {
+                          _selectedInterests.remove(interest);
+                        } else {
+                          if (_selectedInterests.length < _maxTotalInterests) {
+                            _selectedInterests.add(interest);
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                  content: Text(
+                                      'You can select up to $_maxTotalInterests interests in total')),
+                            );
+                          }
+                        }
+                      });
+                    },
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: isSelected ? Colors.indigo : Colors.grey[200],
+                        borderRadius: BorderRadius.circular(8.0),
+                        boxShadow: isSelected
+                            ? [
+                                BoxShadow(
+                                  color: Colors.black26,
+                                  offset: Offset(0, 4),
+                                  blurRadius: 4.0,
+                                ),
+                              ]
+                            : null,
+                      ),
+                      child: Center(
+                        child: Text(
+                          interest,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: isSelected ? Colors.white : Colors.black,
+                            fontWeight: isSelected
+                                ? FontWeight.bold
+                                : FontWeight.normal,
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+              SizedBox(height: 16.0),
+
+              // Custom Interest Input
+              TextField(
+                controller: _customInterestController,
+                maxLength: _customInterestCharLimit,
+                decoration: InputDecoration(
+                  labelText: 'Add Custom Interest',
+                  hintText:
+                      'Enter your interest (max $_customInterestCharLimit chars)',
+                  prefixIcon: Icon(Icons.add),
+                  border: OutlineInputBorder(),
+                  counterText: '', // Hide character counter
+                  suffixIcon: IconButton(
+                    icon: Icon(Icons.check),
+                    onPressed: _customInterestsCount < _maxCustomInterests
+                        ? () {
+                            final customInterest =
+                                _customInterestController.text.trim();
+                            if (customInterest.isNotEmpty) {
+                              if (customInterest.length >
+                                  _customInterestCharLimit) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                      content: Text(
+                                          'Interest must be less than $_customInterestCharLimit characters')),
+                                );
+                                return;
+                              }
+                              if (_selectedInterests.contains(customInterest) ||
+                                  _availableInterests.contains(customInterest)) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                      content: Text('Interest already added')),
+                                );
+                              } else if (_selectedInterests.length <
+                                  _maxTotalInterests) {
+                                setState(() {
+                                  _selectedInterests.add(customInterest);
+                                  _customInterestsCount++;
+                                  _customInterestController.clear();
+                                });
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                      content: Text(
+                                          'You can select up to $_maxTotalInterests interests in total')),
+                                );
+                              }
+                            }
+                          }
+                        : null, // Disable button if limit reached
+                  ),
+                ),
+              ),
+              SizedBox(height: 16.0),
+
+              // Display Selected Interests
+              Text(
+                'Selected Interests (${_selectedInterests.length}/$_maxTotalInterests):',
+                style: TextStyle(
+                  fontSize: 16.0,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              SizedBox(height: 8.0),
+              Wrap(
+                spacing: 8.0,
+                runSpacing: 8.0,
+                children: _selectedInterests.map((interest) {
+                  final isCustomInterest =
+                      !_availableInterests.contains(interest);
+                  return Chip(
+                    label: Text(interest),
+                    backgroundColor:
+                        isCustomInterest ? Colors.orangeAccent : null,
+                    onDeleted: () {
+                      setState(() {
+                        _selectedInterests.remove(interest);
+                        if (isCustomInterest) {
+                          _customInterestsCount--;
+                        }
+                      });
+                    },
+                  );
+                }).toList(),
+              ),
+              SizedBox(height: 16.0),
 
               // Privacy Policy Checkbox
               Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Checkbox(
                     value: _privacyPolicyChecked,
                     onChanged: _privacyPolicyClicked
                         ? (bool? value) {
                             setState(() {
-                              _privacyPolicyChecked = value!;
+                              _privacyPolicyChecked = value ?? false;
                             });
                           }
                         : null,
@@ -407,11 +523,19 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
                   Expanded(
                     child: GestureDetector(
                       onTap: _openPrivacyPolicy,
-                      child: Text(
-                        'I agree to the privacy policy.',
-                        style: TextStyle(
-                          color: Colors.blue,
-                          decoration: TextDecoration.underline,
+                      child: RichText(
+                        text: TextSpan(
+                          text: 'I agree to the ',
+                          style: TextStyle(color: Colors.black),
+                          children: [
+                            TextSpan(
+                              text: 'Privacy Policy',
+                              style: TextStyle(
+                                color: Colors.blue,
+                                decoration: TextDecoration.underline,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -421,13 +545,14 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
 
               // Disclosure of student contact information Checkbox
               Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Checkbox(
                     value: _contactInfoPolicyChecked,
                     onChanged: _contactInfoPolicyClicked
                         ? (bool? value) {
                             setState(() {
-                              _contactInfoPolicyChecked = value!;
+                              _contactInfoPolicyChecked = value ?? false;
                             });
                           }
                         : null,
@@ -435,11 +560,20 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
                   Expanded(
                     child: GestureDetector(
                       onTap: _openContactInfoPolicy,
-                      child: Text(
-                        'I agree to the Disclosure of student contact information.',
-                        style: TextStyle(
-                          color: Colors.blue,
-                          decoration: TextDecoration.underline,
+                      child: RichText(
+                        text: TextSpan(
+                          text: 'I agree to the ',
+                          style: TextStyle(color: Colors.black),
+                          children: [
+                            TextSpan(
+                              text:
+                                  'Disclosure of Student Contact Information',
+                              style: TextStyle(
+                                color: Colors.blue,
+                                decoration: TextDecoration.underline,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -447,12 +581,19 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
                 ],
               ),
 
-              SizedBox(height: 16.0),
+              SizedBox(height: 32.0),
 
               // Submit Button
-              ElevatedButton(
-                onPressed: _submitProfile,
-                child: Text('Submit'),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _submitProfile,
+                  child: Text('Submit'),
+                  style: ElevatedButton.styleFrom(
+                    padding: EdgeInsets.symmetric(vertical: 16.0),
+                    textStyle: TextStyle(fontSize: 18.0),
+                  ),
+                ),
               ),
             ],
           ),
