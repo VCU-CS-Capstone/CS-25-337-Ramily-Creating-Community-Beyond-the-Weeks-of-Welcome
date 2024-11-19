@@ -16,7 +16,7 @@ Status Report Fall Week XX.md is a template for to copy-paste into new Status re
 | Week 3 Status Report | Meet former da Vinci students | Learned in depth project details | No problems to report |
 | Week 4 Status Report | Put together a priority list for the different features | Know what were able to complete within the 2 semesters | No problems to report |
 | Week 5 Status Report | Research different coding languages and software to develop a multi-platform mobile app| Found flutter/dart | No problems to report |
-| Week 6 Status Report | Work on installing flutter/dart, xCode and Android Studio on our systems |  | The installation gave little trouble, but we were able to solve it |
+| Week 6 Status Report | Work on installing flutter/dart, xCode and Android Studio on our systems | Completed the software installation and learning the basics of them | The installation gave little trouble, but we were able to solve it |
 | Week 7 Status Report | Work on the project proposal | Use the documents given by the sponsor and the da Vinci grads to complete the proposal | No problems to report |
 | Week 8 Status Report | Finish the project proposal | Present the proposal and inform advisor/sponsor about planned software for the project | No problems to report |
 | Week 9 Status Report | Learn how to use flutter & dart | Tested and researched on how to code within it | No problems to report |
