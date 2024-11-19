@@ -13,14 +13,14 @@ Manjari Kumarappan
 Lukasz Kurgan
 
 ## 1) Accomplishments this week ##
-   - Met former VCU alumni who worked on the UI design and got an in depth view of their work.
+   - Completed Fall Poster and new home screen. We also updated the profile creation to make the bio less redundant, instructions for interest, and conflict file controlled vocab for the majors.
 
 ## 2) Milestones to be completed next week ##
-   - Gather a list of priorities for the features to implement during the project
-   - Get access to the API to existing VCU features
+   - Work on any changes suggested by the advisor and sponsor
+   - Work on the start of the matching system
 
 ## 3) Issues, problems or concerns ##
-   - Too many features to implement within 2 semesters therefore a priority list is needed
+   - No issues at the moment
    
 
 
