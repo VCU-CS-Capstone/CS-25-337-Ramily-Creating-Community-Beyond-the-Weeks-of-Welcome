@@ -1,5 +1,3 @@
-// lib/screens/profile_creation_screen.dart
-
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -17,31 +15,18 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
   // Controllers for user input
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _bioController = TextEditingController();
   final TextEditingController _customInterestController = TextEditingController();
+  final TextEditingController _promptAnswerController = TextEditingController();
+  final TextEditingController _customMajorController = TextEditingController();
 
   // Privacy policy-related state
-  bool _privacyPolicyClicked = false;
   bool _privacyPolicyChecked = false;
 
   // Disclosure of student contact information-related state
-  bool _contactInfoPolicyClicked = false;
   bool _contactInfoPolicyChecked = false;
 
   // Profile Picture
   File? _profileImage;
-
-  // List of majors
-  final List<String> _majors = [
-    'Computer Science',
-    'Mechanical Engineering',
-    'Electrical Engineering',
-    'Civil Engineering',
-    'Biology',
-    'Business Administration',
-    'Psychology',
-    'Other',
-  ];
 
   // List of pronouns
   final List<String> _pronouns = [
@@ -52,31 +37,85 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
     'Other',
   ];
 
-  // List of interests
-  final List<String> _availableInterests = [
-    'Sports',
+  // List of majors (including 'Major Not Listed')
+  final List<String> _allMajors = [
+    'Accounting',
+    'African American Studies',
+    'Anthropology',
+    'Art History',
+    'Arts',
+    'Bioinformatics',
+    'Biology',
+    'Biomedical Engineering',
+    'Business',
+    'Chemical and Life Science Engineering',
+    'Chemistry',
+    'Cinema',
+    'Clinical Radiation Sciences',
+    'Communication Arts',
+    'Computer Engineering',
+    'Computer Science',
+    'Craft and Material Studies',
+    'Criminal Justice',
+    'Dance and Choreography',
+    'Dental Hygiene',
+    'Early Childhood Education and Teaching',
+    'Economics',
+    'Electrical Engineering',
+    'Elementary Education and Teaching',
+    'English',
+    'Environmental Studies',
+    'Fashion',
+    'Finance',
+    'Financial Technology',
+    'Foreign Language',
+    'Forensic Science',
+    'Gender, Sexuality and Women’s Studies',
+    'Graphic Design',
+    'Health and Physical Education',
+    'Health Services',
+    'Health, Physical Education and Exercise Science',
+    'History',
+    'Homeland Security and Emergency Preparedness',
+    'Human and Organizational Development',
+    'Information Systems',
+    'Interdisciplinary Studies',
+    'Interior Design',
+    'International Studies',
+    'Kinetic Imaging',
+    'Marketing',
+    'Mass Communications',
+    'Mathematical Sciences',
+    'Mechanical Engineering',
+    'Medical Laboratory Sciences',
     'Music',
-    'Art',
-    'Technology',
-    'Literature',
+    'Nursing',
+    'Painting and Printmaking',
+    'Pharmaceutical Sciences',
+    'Philosophy',
+    'Photography and Film',
+    'Physics',
+    'Political Science',
+    'Psychology',
+    'Real Estate',
+    'Religious Studies',
     'Science',
-    'Travel',
-    'Gaming',
-    'Photography',
-    'Cooking',
-    'Reading',
-    'Fitness',
-    'Movies',
-    'Dance',
-    'Writing',
+    'Sculpture',
+    'Social Work',
+    'Sociology',
+    'Special Education and Teaching',
+    'Supply Chain Management',
+    'Theatre',
+    'Urban and Regional Studies',
+    'Major Not Listed', // Add this at the end
   ];
 
   // Selected interests
   Set<String> _selectedInterests = Set<String>();
 
   // Selected values
-  String? _selectedMajor;
   String? _selectedPronoun;
+  String? _selectedMajor;
 
   // Custom Interests
   int _customInterestsCount = 0;
@@ -85,6 +124,13 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
   final int _maxTotalInterests = 4; // Total interests limit
 
   final ImagePicker _picker = ImagePicker();
+
+  // Bio Prompts
+  final List<String> _bioPrompts = [
+    'What I\'m most excited for at VCU is ___',
+    'I chose VCU because ___',
+  ];
+  String? _selectedPrompt;
 
   // Function to pick image from gallery or camera
   Future<void> _pickImage() async {
@@ -99,7 +145,6 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
               title: Text('Choose from Gallery'),
               onTap: () async {
                 Navigator.of(context).pop();
-                // Pick image from the gallery (default behavior)
                 final XFile? image = await _picker.pickImage(
                   source: ImageSource.gallery,
                 );
@@ -115,7 +160,6 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
               title: Text('Take a Photo'),
               onTap: () async {
                 Navigator.of(context).pop();
-                // Pick image from the camera
                 final XFile? image = await _picker.pickImage(
                   source: ImageSource.camera,
                 );
@@ -133,7 +177,9 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
   }
 
   void _submitProfile() {
-    if (_formKey.currentState!.validate() && _privacyPolicyChecked && _contactInfoPolicyChecked) {
+    if (_formKey.currentState!.validate() &&
+        _privacyPolicyChecked &&
+        _contactInfoPolicyChecked) {
       if (_selectedInterests.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Please select at least one interest')),
@@ -141,14 +187,38 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
         return;
       }
 
+      if (_selectedPrompt == null ||
+          _promptAnswerController.text.trim().isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Please complete the bio prompt')),
+        );
+        return;
+      }
+
+      // Determine the major to use
+      String major = '';
+      if (_selectedMajor == 'Major Not Listed') {
+        if (_customMajorController.text.trim().isEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Please enter your major')),
+          );
+          return;
+        } else {
+          major = _customMajorController.text.trim();
+        }
+      } else {
+        major = _selectedMajor!;
+      }
+
       // Collect all the data
       final profileData = {
         'name': _nameController.text.trim(),
         'email': _emailController.text.trim(),
-        'major': _selectedMajor,
+        'major': major,
         'pronouns': _selectedPronoun,
-        'bio': _bioController.text.trim(),
         'interests': _selectedInterests.toList(),
+        'bio': _selectedPrompt!
+            .replaceAll('___', _promptAnswerController.text.trim()),
       };
 
       // Handle profile submission logic here
@@ -166,24 +236,21 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
       );
     } else if (!_privacyPolicyChecked) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Please agree to the privacy policy')),
+        SnackBar(content: Text('Please agree to the Privacy Policy')),
       );
     } else if (!_contactInfoPolicyChecked) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Please agree to the Disclosure of student contact information')),
+        SnackBar(
+            content: Text(
+                'Please agree to the Disclosure of Student Contact Information')),
       );
     }
   }
 
   // Function to open privacy policy link
   Future<void> _openPrivacyPolicy() async {
-    const url = 'https://www.vcu.edu/privacy-statement/';
-    if (await canLaunch(url)) {
-      await launch(url);
-      setState(() {
-        _privacyPolicyClicked = true;
-      });
-    } else {
+    final Uri url = Uri.parse('https://www.vcu.edu/privacy-statement/');
+    if (!await launchUrl(url)) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Could not open the link')),
       );
@@ -192,13 +259,9 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
 
   // Function to open disclosure policy link
   Future<void> _openContactInfoPolicy() async {
-    const url = 'https://registrar.vcu.edu/records/family-educational-rights-and-privacy-act/student-contact-information/';
-    if (await canLaunch(url)) {
-      await launch(url);
-      setState(() {
-        _contactInfoPolicyClicked = true;
-      });
-    } else {
+    final Uri url = Uri.parse(
+        'https://registrar.vcu.edu/records/family-educational-rights-and-privacy-act/student-contact-information/');
+    if (!await launchUrl(url)) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Could not open the link')),
       );
@@ -282,28 +345,55 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
               SizedBox(height: 16.0),
 
               // Major Dropdown
-              DropdownButtonFormField<String>(
-                decoration: InputDecoration(
-                  labelText: 'Major',
-                  prefixIcon: Icon(Icons.school),
-                  border: OutlineInputBorder(),
+              SizedBox(
+                width: double.infinity,
+                child: DropdownButtonFormField<String>(
+                  decoration: InputDecoration(
+                    labelText: 'Major',
+                    prefixIcon: Icon(Icons.school),
+                    border: OutlineInputBorder(),
+                  ),
+                  value: _selectedMajor,
+                  isExpanded: true, // Fixes overflow
+                  items: _allMajors
+                      .map((major) => DropdownMenuItem(
+                            value: major,
+                            child: Text(
+                              major,
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
+                            ),
+                          ))
+                      .toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedMajor = value;
+                      if (value != 'Major Not Listed') {
+                        _customMajorController.clear();
+                      }
+                    });
+                  },
+                  validator: (value) =>
+                      value == null ? 'Please select your major' : null,
                 ),
-                value: _selectedMajor,
-                items: _majors
-                    .map((major) => DropdownMenuItem(
-                          value: major,
-                          child: Text(major),
-                        ))
-                    .toList(),
-                onChanged: (value) {
-                  setState(() {
-                    _selectedMajor = value;
-                  });
-                },
-                validator: (value) =>
-                    value == null ? 'Please select your major' : null,
               ),
               SizedBox(height: 16.0),
+
+              // Custom Major Input (Shown only when 'Major Not Listed' is selected)
+              if (_selectedMajor == 'Major Not Listed') ...[
+                TextFormField(
+                  controller: _customMajorController,
+                  decoration: InputDecoration(
+                    labelText: 'Enter Your Major',
+                    prefixIcon: Icon(Icons.edit),
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (value) => value == null || value.isEmpty
+                      ? 'Please enter your major'
+                      : null,
+                ),
+                SizedBox(height: 16.0),
+              ],
 
               // Pronouns Dropdown
               DropdownButtonFormField<String>(
@@ -327,30 +417,22 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
               ),
               SizedBox(height: 16.0),
 
-              // Bio Field
-              TextFormField(
-                controller: _bioController,
-                decoration: InputDecoration(
-                  labelText: 'Bio',
-                  hintText:
-                      'e.g., Passionate about technology and music. Love hiking on weekends.',
-                  hintStyle: TextStyle(color: Colors.grey[600]),
-                  prefixIcon: Icon(Icons.info),
-                  border: OutlineInputBorder(),
-                ),
-                maxLength: 100,
-                maxLines: 4,
-                validator: (value) =>
-                    value == null || value.isEmpty ? 'Enter a bio' : null,
-              ),
-              SizedBox(height: 16.0),
-
               // Interests Section
               Text(
                 'Select Your Interests',
                 style: TextStyle(
                   fontSize: 16.0,
                   fontWeight: FontWeight.bold,
+                ),
+              ),
+              SizedBox(height: 8.0),
+
+              // Instructions
+              Text(
+                'Choose up to $_maxTotalInterests interests that you are passionate about. You can also add up to $_maxCustomInterests custom interests.',
+                style: TextStyle(
+                  fontSize: 14.0,
+                  color: Colors.grey[600],
                 ),
               ),
               SizedBox(height: 8.0),
@@ -446,8 +528,10 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
                                 );
                                 return;
                               }
-                              if (_selectedInterests.contains(customInterest) ||
-                                  _availableInterests.contains(customInterest)) {
+                              if (_selectedInterests
+                                      .contains(customInterest) ||
+                                  _availableInterests
+                                      .contains(customInterest)) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
                                       content: Text('Interest already added')),
@@ -506,79 +590,118 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
               ),
               SizedBox(height: 16.0),
 
-              // Privacy Policy Checkbox
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Checkbox(
-                    value: _privacyPolicyChecked,
-                    onChanged: _privacyPolicyClicked
-                        ? (bool? value) {
-                            setState(() {
-                              _privacyPolicyChecked = value ?? false;
-                            });
-                          }
-                        : null,
+              // Prompt Section
+              Text(
+                'Complete a Prompt',
+                style: TextStyle(
+                  fontSize: 16.0,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              SizedBox(height: 8.0),
+
+              // Prompt Dropdown
+              DropdownButtonFormField<String>(
+                decoration: InputDecoration(
+                  labelText: 'Select a Prompt',
+                  prefixIcon: Icon(Icons.edit),
+                  border: OutlineInputBorder(),
+                ),
+                value: _selectedPrompt,
+                items: _bioPrompts.map((prompt) {
+                  return DropdownMenuItem(
+                    value: prompt,
+                    child: Text(prompt.replaceAll('___', '...')),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _selectedPrompt = value;
+                    _promptAnswerController.clear(); // Clear previous answer
+                  });
+                },
+                validator: (value) =>
+                    value == null ? 'Please select a prompt' : null,
+              ),
+              SizedBox(height: 16.0),
+
+              // If a prompt is selected, show the answer field
+              if (_selectedPrompt != null) ...[
+                TextFormField(
+                  controller: _promptAnswerController,
+                  decoration: InputDecoration(
+                    labelText: 'Your Answer',
+                    hintText: _selectedPrompt != null
+                        ? _selectedPrompt!.replaceAll('___', '...')
+                        : 'Fill in the blank',
+                    border: OutlineInputBorder(),
                   ),
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: _openPrivacyPolicy,
-                      child: RichText(
-                        text: TextSpan(
-                          text: 'I agree to the ',
-                          style: TextStyle(color: Colors.black),
-                          children: [
-                            TextSpan(
-                              text: 'Privacy Policy',
-                              style: TextStyle(
-                                color: Colors.blue,
-                                decoration: TextDecoration.underline,
-                              ),
-                            ),
-                          ],
+                  maxLength: 100, // Set your desired character limit
+                  validator: (value) => value == null || value.isEmpty
+                      ? 'Please complete the prompt'
+                      : null,
+                ),
+                SizedBox(height: 16.0),
+              ],
+
+              // Privacy Policy Checkbox using CheckboxListTile
+              CheckboxListTile(
+                value: _privacyPolicyChecked,
+                onChanged: (bool? value) {
+                  setState(() {
+                    _privacyPolicyChecked = value ?? false;
+                  });
+                },
+                title: GestureDetector(
+                  onTap: _openPrivacyPolicy,
+                  child: RichText(
+                    text: TextSpan(
+                      text: 'I agree to the ',
+                      style: TextStyle(color: Colors.black),
+                      children: [
+                        TextSpan(
+                          text: 'Privacy Policy',
+                          style: TextStyle(
+                            color: Colors.blue,
+                            decoration: TextDecoration.underline,
+                          ),
                         ),
-                      ),
+                      ],
                     ),
                   ),
-                ],
+                ),
+                controlAffinity: ListTileControlAffinity.leading,
+                contentPadding: EdgeInsets.zero,
               ),
 
-              // Disclosure of student contact information Checkbox
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Checkbox(
-                    value: _contactInfoPolicyChecked,
-                    onChanged: _contactInfoPolicyClicked
-                        ? (bool? value) {
-                            setState(() {
-                              _contactInfoPolicyChecked = value ?? false;
-                            });
-                          }
-                        : null,
-                  ),
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: _openContactInfoPolicy,
-                      child: RichText(
-                        text: TextSpan(
-                          text: 'I agree to the ',
-                          style: TextStyle(color: Colors.black),
-                          children: [
-                            TextSpan(
-                              text:
-                                  'Disclosure of Student Contact Information',
-                              style: TextStyle(
-                                color: Colors.blue,
-                                decoration: TextDecoration.underline,
-                              ),
-                            ),
-                          ],
+              // Disclosure of student contact information Checkbox using CheckboxListTile
+              CheckboxListTile(
+                value: _contactInfoPolicyChecked,
+                onChanged: (bool? value) {
+                  setState(() {
+                    _contactInfoPolicyChecked = value ?? false;
+                  });
+                },
+                title: GestureDetector(
+                  onTap: _openContactInfoPolicy,
+                  child: RichText(
+                    text: TextSpan(
+                      text: 'I agree to the ',
+                      style: TextStyle(color: Colors.black),
+                      children: [
+                        TextSpan(
+                          text: 'Disclosure of Student Contact Information',
+                          style: TextStyle(
+                            color: Colors.blue,
+                            decoration: TextDecoration.underline,
+                          ),
                         ),
-                      ),
+                      ],
                     ),
                   ),
-                ],
+                ),
+                controlAffinity: ListTileControlAffinity.leading,
+                contentPadding: EdgeInsets.zero,
               ),
 
               SizedBox(height: 32.0),
@@ -601,4 +724,23 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
       ),
     );
   }
+
+  // List of available interests (add this if missing)
+  final List<String> _availableInterests = [
+    'Sports',
+    'Music',
+    'Art',
+    'Technology',
+    'Literature',
+    'Science',
+    'Travel',
+    'Gaming',
+    'Photography',
+    'Cooking',
+    'Reading',
+    'Fitness',
+    'Movies',
+    'Dance',
+    'Writing',
+  ];
 }
