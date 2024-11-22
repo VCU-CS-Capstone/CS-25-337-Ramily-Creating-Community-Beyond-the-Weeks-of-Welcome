@@ -21,6 +21,3 @@ Lukasz Kurgan
 
 ## 3) Issues, problems or concerns ##
    - No issues at the moment
-   
-
-
