@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "942584945595",
+    "firebase_url": "https://ramily-845f9-default-rtdb.firebaseio.com",
+    "project_id": "ramily-845f9",
+    "storage_bucket": "ramily-845f9.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:942584945595:android:aad90b0666179c4315829e",
+        "android_client_info": {
+          "package_name": "android.com.example.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBhG3vhcCEcnl0xW-fGTMn7vtGG-DBeITE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

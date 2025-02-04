@@ -1,12 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:ramily/Screens/login_screen.dart';
+import 'package:ramily/Screens/profile_creation_screen.dart';
+import 'firebase_options.dart';
 
-
-void main() {
-  runApp(RamilyApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  // Initialize Firebase
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+//run app
+  runApp(const RamilyApp());
 }
 
 class RamilyApp extends StatelessWidget {
+  const RamilyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -15,10 +25,10 @@ class RamilyApp extends StatelessWidget {
         primarySwatch: Colors.indigo,
       ),
       home: LoginScreen(),
+      //home: const ProfileCreationScreen(),
     );
   }
 }
-
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
@@ -77,7 +87,6 @@ class _MyHomePageState extends State<MyHomePage> {
           // Column is also a layout widget. It takes a list of children and
           // arranges them vertically. By default, it sizes itself to fit its
           // children horizontally, and tries to be as tall as its parent.
-          //
           // Column has various properties to control how it sizes itself and
           // how it positions its children. Here we use mainAxisAlignment to
           // center the children vertically; the main axis here is the vertical

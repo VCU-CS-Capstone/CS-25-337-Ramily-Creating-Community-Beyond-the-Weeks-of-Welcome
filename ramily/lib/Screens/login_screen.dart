@@ -1,10 +1,12 @@
-// lib/screens/login_screen.dart
-
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'home_screen.dart';
 import 'profile_creation_screen.dart'; // Import ProfileCreationScreen
 
 class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
+
   @override
   State createState() => _LoginScreenState();
 }
@@ -17,31 +19,64 @@ class _LoginScreenState extends State<LoginScreen> {
   // Key for the form
   final _formKey = GlobalKey<FormState>();
 
-  // Hardcoded dummy credentials
-  final String _dummyEmail = 'student@vcu.edu';
-  final String _dummyPassword = 'password123';
+  // Dummy password
+  final String _dummyPassword = 'dummyPassword123!';
 
   // Function to handle login
-  void _handleLogin() {
+  void _handleLogin() async {
     if (_formKey.currentState!.validate()) {
       String email = _emailController.text.trim();
-      String password = _passwordController.text;
+      String password = 'dummyPassword123!'; // Use the shared dummy password
 
-      if (email == _dummyEmail && password == _dummyPassword) {
-        // Navigate to the home screen
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => HomeScreen()),
-        );
+      try {
+        // Sign in with Firebase Authentication
+        UserCredential userCredential = await FirebaseAuth.instance
+            .signInWithEmailAndPassword(email: email, password: password);
 
-        // Show a success message
+        final user = userCredential.user;
+
+        if (user != null) {
+          // Check and fetch user data from Firestore
+          DocumentSnapshot userDoc = await FirebaseFirestore.instance
+              .collection('users')
+              .doc(user.uid)
+              .get();
+
+          if (!userDoc.exists) {
+            // If user data doesn't exist in Firestore, create a new entry
+            await FirebaseFirestore.instance
+                .collection('users')
+                .doc(user.uid)
+                .set({
+              'email': email,
+              'createdAt': DateTime.now(),
+            });
+          }
+
+          // Navigate to the HomeScreen with user data
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => HomeScreen(email: email),
+            ),
+          );
+
+          // Show a success message
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Welcome, $email!')),
+          );
+        }
+      } on FirebaseAuthException catch (e) {
+        String message;
+        if (e.code == 'user-not-found') {
+          message = 'No user found for that email.';
+        } else if (e.code == 'wrong-password') {
+          message = 'Incorrect password.';
+        } else {
+          message = 'Login failed. Please try again.';
+        }
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Welcome, $email!')),
-        );
-      } else {
-        // Show an error message
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Invalid email or password')),
+          SnackBar(content: Text(message)),
         );
       }
     }
@@ -50,119 +85,80 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // Optional: Set a background color
       backgroundColor: Colors.white,
       body: SingleChildScrollView(
-        padding: EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            SizedBox(height: 100.0),
-
-            // Center the Stack
+            const SizedBox(height: 100.0),
             Center(
               child: Stack(
                 alignment: Alignment.center,
                 children: [
-                  // Circular Background Image behind the logo
                   Container(
                     child: ClipOval(
                       child: Image.asset(
-                        'assets/Paint_Ramily.png', // Your background image
-                        height: 180.0, // Adjust size as needed
-                        width: 180.0, // Equal to height for circle
+                        'assets/Paint_Ramily.png',
+                        height: 180.0,
+                        width: 180.0,
                         fit: BoxFit.cover,
                       ),
                     ),
                   ),
-
-                  // Word Logo Image
                   Image.asset(
-                    'assets/Ramily_Titleblack.png', // Your word logo image
-                    height: 100.0, // Adjust size as needed
+                    'assets/Ramily_Titleblack.png',
+                    height: 100.0,
                   ),
                 ],
               ),
             ),
-
-            SizedBox(height: 90.0),
-
-            // Login Form
+            const SizedBox(height: 90.0),
             Form(
-              key: _formKey, // Assign the form key
+              key: _formKey,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
-                  // Email field
                   TextFormField(
                     controller: _emailController,
                     decoration: InputDecoration(
                       labelText: 'Email',
-                      prefixIcon: Icon(Icons.email),
-                      border: OutlineInputBorder(),
+                      prefixIcon: const Icon(Icons.email),
+                      border: const OutlineInputBorder(),
                       filled: true,
                       fillColor: Colors.white.withOpacity(0.8),
                     ),
                     keyboardType: TextInputType.emailAddress,
                     validator: (value) {
-                      // Email validation
                       if (value == null || value.isEmpty) {
                         return 'Please enter your email';
                       }
-                      // Simple email validation
                       if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
                         return 'Enter a valid email address';
                       }
                       return null;
                     },
                   ),
-
-                  SizedBox(height: 16.0),
-
-                  // Password field
-                  TextFormField(
-                    controller: _passwordController,
-                    decoration: InputDecoration(
-                      labelText: 'Password',
-                      prefixIcon: Icon(Icons.lock),
-                      border: OutlineInputBorder(),
-                      filled: true,
-                      fillColor: Colors.white.withOpacity(0.8),
-                    ),
-                    obscureText: true,
-                    validator: (value) {
-                      // Password validation
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter your password';
-                      }
-                      return null;
-                    },
-                  ),
-
-                  SizedBox(height: 32.0),
-
-                  // Login button
+                  const SizedBox(height: 32.0),
                   ElevatedButton(
                     onPressed: _handleLogin,
-                    child: Text('Login'),
                     style: ElevatedButton.styleFrom(
-                      padding: EdgeInsets.symmetric(vertical: 16.0),
+                      padding: const EdgeInsets.symmetric(vertical: 16.0),
                       backgroundColor: const Color.fromARGB(255, 240, 240, 243),
-                      textStyle: TextStyle(fontSize: 18.0),
+                      textStyle: const TextStyle(fontSize: 18.0),
                     ),
+                    child: const Text('Login'),
                   ),
-
-                  SizedBox(height: 16.0),
-
-                  // Additional options (Sign Up)
+                  const SizedBox(height: 16.0),
                   TextButton(
                     onPressed: () {
-                      // Navigate to Profile Creation Screen
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => ProfileCreationScreen()),
+                        MaterialPageRoute(
+                          builder: (context) => const ProfileCreationScreen(),
+                        ),
                       );
                     },
-                    child: Text(
+                    child: const Text(
                       'Don\'t have an account? Sign up',
                       style: TextStyle(color: Colors.indigo),
                     ),
