@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:ramily/Screens/login_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -61,6 +62,22 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() {
       _selectedIndex = index;
     });
+  }
+
+  // Log out function
+  Future<void> _logOut() async {
+    try {
+      await FirebaseAuth.instance.signOut();
+      // Navigate to the Login Screen after logging out
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => LoginScreen()), 
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error logging out: ${e.toString()}')),
+      );
+    }
   }
 
   @override
@@ -394,6 +411,14 @@ class _HomeScreenState extends State<HomeScreen> {
             text: 'Navigate',
             onTap: () => _launchURL('https://navigate.vcu.edu/'),
           ),
+          ListTile(
+            leading: const Icon(Icons.exit_to_app, color: Colors.black87),
+            title: const Text(
+              'Log Out',
+              style: TextStyle(color: Colors.black87),
+            ),
+            onTap: _logOut,
+          )
         ],
       ),
     );
