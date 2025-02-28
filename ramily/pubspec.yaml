@@ -66,6 +66,7 @@ flutter:
     - assets/logo.png
     - assets/Paint_Ramily.png
     - assets/Ramily_Titleblack.png
+    - assets/compass.png
 
 
   # To add assets to your application, add an assets section, like this:
