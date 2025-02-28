@@ -2,7 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'home_screen.dart';
-import 'profile_creation_screen.dart'; // Import ProfileCreationScreen
+import 'profile_creation_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -12,38 +12,30 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  // Controllers for user input
   final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
-
-  // Key for the form
   final _formKey = GlobalKey<FormState>();
 
-  // Dummy password
   final String _dummyPassword = 'dummyPassword123!';
 
-  // Function to handle login
   void _handleLogin() async {
     if (_formKey.currentState!.validate()) {
       String email = _emailController.text.trim();
-      String password = 'dummyPassword123!'; // Use the shared dummy password
+      String password = _dummyPassword;
 
       try {
-        // Sign in with Firebase Authentication
+        // Sign in with Auth
         UserCredential userCredential = await FirebaseAuth.instance
             .signInWithEmailAndPassword(email: email, password: password);
 
         final user = userCredential.user;
-
         if (user != null) {
-          // Check and fetch user data from Firestore
+          // Check if Firestore doc exists; if not, create minimal doc
           DocumentSnapshot userDoc = await FirebaseFirestore.instance
               .collection('users')
               .doc(user.uid)
               .get();
 
           if (!userDoc.exists) {
-            // If user data doesn't exist in Firestore, create a new entry
             await FirebaseFirestore.instance
                 .collection('users')
                 .doc(user.uid)
@@ -53,7 +45,7 @@ class _LoginScreenState extends State<LoginScreen> {
             });
           }
 
-          // Navigate to the HomeScreen with user data
+          // Navigate to HomeScreen, pass the email
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
@@ -61,7 +53,6 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           );
 
-          // Show a success message
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Welcome, $email!')),
           );
@@ -95,14 +86,12 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Stack(
                 alignment: Alignment.center,
                 children: [
-                  Container(
-                    child: ClipOval(
-                      child: Image.asset(
-                        'assets/Paint_Ramily.png',
-                        height: 180.0,
-                        width: 180.0,
-                        fit: BoxFit.cover,
-                      ),
+                  ClipOval(
+                    child: Image.asset(
+                      'assets/Paint_Ramily.png',
+                      height: 180.0,
+                      width: 180.0,
+                      fit: BoxFit.cover,
                     ),
                   ),
                   Image.asset(
