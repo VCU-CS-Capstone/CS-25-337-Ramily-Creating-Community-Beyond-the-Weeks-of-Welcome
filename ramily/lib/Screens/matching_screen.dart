@@ -12,12 +12,35 @@ class _MatchingScreenState extends State<MatchingScreen> {
   List<Map<String, String>> matchedUsers = [];
 
   final List<Map<String, String>> allUsers = [
-    {'name': 'DaJuan Hackett', 'major': 'Computer Science', 'pronouns': 'He/Him', 'interests': 'Technology, Sports, Gaming, Music', 'bio': 'I chose VCU because of the diversity.'},
-    {'name': 'Ethan Lucas', 'major': 'Environmental Studies', 'pronouns': 'He/Him', 'interests': 'Travel, Movies, Music, Literature', 'bio': 'I chose VCU because of the integration with the city.'},
-    {'name': 'Jak Saunders', 'major': 'Design', 'pronouns': 'They/Them', 'interests': 'Art, Music, Movies', 'bio': 'I chose VCU because it’s a creative and innovative environment.'},
-    {'name': 'Alex Martinez', 'major': 'Psychology', 'pronouns': 'He/Him', 'interests': 'Travel, Photography, Reading', 'bio': 'I chose VCU for its diverse student body and academic rigor.'},
-    {'name': 'Jamie Lee', 'major': 'Electrical Engineering', 'pronouns': 'She/Her', 'interests': 'Coding, Hiking, Music', 'bio': 'I chose VCU because of the excellent engineering program.'},
-    // Add more users as needed...
+    {'name': 'DaJuan Hackett', 'major': 'Computer Science', 'pronouns': 'He/Him', 'interests': 'Technology, Sports, Gaming, Music', 'bio': 'What I’m most excited for at VCU is joining the computer science club and learning about artificial intelligence.'},
+    {'name': 'Ethan Lucas', 'major': 'Environmental Studies', 'pronouns': 'He/Him', 'interests': 'Travel, Movies, Music, Literature', 'bio': 'I chose VCU because of the integration with the city and the focus on environmental research.'},
+    {'name': 'Scott Grant', 'major': 'Design', 'pronouns': 'They/Them', 'interests': 'Art, Music, Movies, Fashion', 'bio': 'What I’m most excited for at VCU is collaborating on design projects and using creative software.'},
+    {'name': 'Felix Webb', 'major': 'Psychology', 'pronouns': 'He/Him', 'interests': 'Travel, Photography, Reading, Fitness', 'bio': 'I chose VCU because of the diverse student body and its excellent psychology program.'},
+    {'name': 'Venessa Page', 'major': 'Electrical Engineering', 'pronouns': 'She/Her', 'interests': 'Coding, Hiking, Music, Photography', 'bio': 'What I’m most excited for at VCU is building and testing circuits as part of my engineering coursework.'},
+    {'name': 'Sophia Davis', 'major': 'Nursing', 'pronouns': 'She/Her', 'interests': 'Fitness, Cooking, Reading, Hiking', 'bio': 'What I’m most excited for at VCU is gaining hands-on experience in the clinical setting.'},
+    {'name': 'Michael Johnson', 'major': 'Finance', 'pronouns': 'He/Him', 'interests': 'Reading, Sports, Travel, Cooking', 'bio': 'I chose VCU because of its strong finance program and the internship opportunities available in Richmond.'},
+    {'name': 'Ava Taylor', 'major': 'Biology', 'pronouns': 'She/Her', 'interests': 'Science, Music, Cooking, Hiking', 'bio': 'I chose VCU because of its cutting-edge research in genetics and the opportunity to work with faculty on lab projects.'},
+    {'name': 'Liam Roberts', 'major': 'History', 'pronouns': 'He/Him', 'interests': 'Reading, Travel, Writing, Photography', 'bio': 'What I’m most excited for at VCU is learning about world history from different cultural perspectives.'},
+    {'name': 'Mia Brown', 'major': 'Computer Engineering', 'pronouns': 'She/Her', 'interests': 'Technology, Gaming, Photography, Music', 'bio': 'What I’m most excited for at VCU is working on projects that blend technology and design.'},
+    {'name': 'Benjamin Green', 'major': 'Political Science', 'pronouns': 'He/Him', 'interests': 'Movies, Reading, Travel, Photography', 'bio': 'I chose VCU because it offers a strong political science program with an emphasis on public policy.'},
+    {'name': 'Lucas White', 'major': 'Mathematical Sciences', 'pronouns': 'He/Him', 'interests': 'Science, Technology, Gaming, Photography', 'bio': 'What I’m most excited for at VCU is solving real-world problems using mathematical modeling.'},
+    {'name': 'Olivia Adams', 'major': 'Art History', 'pronouns': 'She/Her', 'interests': 'Art, Travel, Photography, Fashion', 'bio': 'I chose VCU because of its strong art history program and the opportunity to study abroad.'},
+    {'name': 'William Harris', 'major': 'Chemistry', 'pronouns': 'He/Him', 'interests': 'Science, Fitness, Music, Travel', 'bio': 'I chose VCU because of the chemistry department’s focus on hands-on experiments and research.'},
+    {'name': 'Emma Walker', 'major': 'Dance and Choreography', 'pronouns': 'She/Her', 'interests': 'Dance, Music, Fitness, Photography', 'bio': 'What I’m most excited for at VCU is performing in the spring dance showcase and collaborating with other artists.'},
+    {'name': 'James Lee', 'major': 'Sociology', 'pronouns': 'He/Him', 'interests': 'Reading, Writing, Politics, Music', 'bio': 'What I’m most excited for at VCU is engaging in research projects about social issues and inequalities.'},
+    {'name': 'Zoe Young', 'major': 'Psychology', 'pronouns': 'She/Her', 'interests': 'Travel, Writing, Movies, Art', 'bio': 'I chose VCU because it has a renowned psychology program with plenty of opportunities for internships.'},
+    {'name': 'Ella Scott', 'major': 'Philosophy', 'pronouns': 'She/Her', 'interests': 'Reading, Writing, Philosophy, Music', 'bio': 'What I’m most excited for at VCU is exploring existentialism and applying philosophical concepts to everyday life.'},
+    {'name': 'Jackson King', 'major': 'Mechanical Engineering', 'pronouns': 'He/Him', 'interests': 'Technology, Sports, Movies, Music', 'bio': 'What I’m most excited for at VCU is designing prototypes for engineering solutions and applying them to real-world problems.'},
+    {'name': 'Aiden Carter', 'major': 'Finance', 'pronouns': 'He/Him', 'interests': 'Music, Reading, Gaming, Fitness', 'bio': 'I chose VCU because of its practical approach to finance education and career readiness.'},
+    {'name': 'Sophia Hall', 'major': 'Marketing', 'pronouns': 'She/Her', 'interests': 'Fashion, Photography, Writing, Music', 'bio': 'What I’m most excited for at VCU is learning the latest marketing strategies and how to apply them in business.'},
+    {'name': 'Mason King', 'major': 'Health Services', 'pronouns': 'He/Him', 'interests': 'Sports, Fitness, Cooking, Hiking', 'bio': 'What I’m most excited for at VCU is gaining real-world experience working in health administration.'},
+    {'name': 'Isabella Baker', 'major': 'Mechanical Engineering', 'pronouns': 'She/Her', 'interests': 'Science, Technology, Hiking, Photography', 'bio': 'I chose VCU because of its comprehensive engineering program and its focus on sustainability.'},
+    {'name': 'Liam Allen', 'major': 'Biomedical Engineering', 'pronouns': 'He/Him', 'interests': 'Technology, Science, Fitness, Hiking', 'bio': 'What I’m most excited for at VCU is developing innovative solutions for the healthcare industry.'},
+    {'name': 'Madison Nelson', 'major': 'Communication Arts', 'pronouns': 'She/Her', 'interests': 'Art, Travel, Photography, Fashion', 'bio': 'What I’m most excited for at VCU is improving my creative skills and building a portfolio for future opportunities.'},
+    {'name': 'Jacob Martinez', 'major': 'Political Science', 'pronouns': 'He/Him', 'interests': 'Reading, Sports, Politics, Movies', 'bio': 'What I’m most excited for at VCU is engaging in discussions about the future of global politics and social change.'},
+    {'name': 'Lily Carter', 'major': 'Art History', 'pronouns': 'She/Her', 'interests': 'Art, Travel, Photography, Literature', 'bio': 'I chose VCU because of its strong focus on contemporary art and global art history.'},
+    {'name': 'Daniel Evans', 'major': 'History', 'pronouns': 'He/Him', 'interests': 'Travel, Literature, Reading, Politics', 'bio': 'What I’m most excited for at VCU is exploring the connections between historical events and contemporary culture.'},
+    // Add more users until you reach 50...
   ];
 
   @override
@@ -105,6 +128,16 @@ class _MatchingScreenState extends State<MatchingScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Profile Picture Placeholder
+            Container(
+              width: 100,
+              height: 100,
+              color: Colors.grey[300], // Light grey placeholder for the profile picture
+              child: const Icon(Icons.person, color: Colors.grey), // Placeholder icon
+              alignment: Alignment.center,
+            ),
+            const SizedBox(height: 8),
+
             // Name
             Text(
               'Name: $name',
