@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'home_screen.dart';
 
 class MatchingScreen extends StatelessWidget {
   const MatchingScreen({Key? key}) : super(key: key);
@@ -63,31 +62,6 @@ class MatchingScreen extends StatelessWidget {
                   description: user['description']!,
                 );
               }).toList(),
-            ),
-            const SizedBox(height: 30),
-
-            // Button to go back to Home
-            Align(
-              alignment: Alignment.center,
-              child: ElevatedButton(
-                onPressed: () {
-                  // Once done, go back to HomeScreen
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) =>
-                          const HomeScreen(email: 'dummy@vcu.edu'),
-                    ),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24.0,
-                    vertical: 12.0,
-                  ),
-                ),
-                child: const Text('Continue to Home'),
-              ),
             ),
           ],
         ),
