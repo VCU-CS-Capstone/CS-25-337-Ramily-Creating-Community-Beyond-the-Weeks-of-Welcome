@@ -25,21 +25,21 @@ Status Report Fall Week XX.md is a template for to copy-paste into new Status re
 | Week 12 Status Report | Chang the profile creation screen to fit the specifications given by the sponsor | Added a matrix of interest, the need to accept VCU policy, added custom typeable interest, gave a more full & sorted list of majors | No problems to report |
 | Week 13 Status Report | Work on fall poster | Completed fall poster and began working on home screen & fixing up the profile creation more | No problems to report |
 | Week 14 Status Report | Complete the updated home screen and changes to profile creation bio | Present the changes and new features to advisor & sponsor | No problems to report |
-| Week 15 Status Report | | | |
-| Week 16 Status Report | | | |
+| Week 15 Status Report | Implement advisor's recommendations | Completed recommendations and added home screen displaying user's name | No problems to report |
+| Week 16 Status Report | Discuss plans for spring semester | Successfully mapped out spring semester plans | No problems to report |
 
 ## Spring Semester
 
 | Document | Tasks | Accomplishments| Issues |
 |---|---|---|---|
-| Week 1 Status Report | | | |
-| Week 2 Status Report | | | |
-| Week 3 Status Report | | | |
-| Week 4 Status Report | | | |
-| Week 5 Status Report | | | |
-| Week 6 Status Report | | | |
-| Week 7 Status Report | | | |
-| Week 8 Status Report | | | |
+| Week 1 Status Report | Discuss the semester with advisor | Worked out new meeting times and first steps this semester| No problems to report |
+| Week 2 Status Report | Prepare a test survey and finalize profile creation | Completed a survey for testing and profile creation | No problem to report |
+| Week 3 Status Report | Create an interim database | Created a firebase database | No problems to report |
+| Week 4 Status Report | Complete 1st round of testing | Completed testing at library | App stopped working on multiple devices |
+| Week 5 Status Report | Complete 2nd round of testing | Completed testing at library | App still not working on 2 of our devices |
+| Week 6 Status Report | Work on firebase bugs | Meet to work on our laptops | Update indiividual systems to sucessfully work with firebase |
+| Week 7 Status Report | Work on beta matching | Completed a beta matching UI | Figure out individual bugs |
+| Week 8 Status Report | Complete suggestions on matching from advisor | Compelted individual tasks to make matching fit specifications | No problems to report |
 | Week 9 Status Report | | | |
 | Week 10 Status Report | | | |
 | Week 11 Status Report | | | |
