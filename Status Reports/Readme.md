@@ -39,7 +39,7 @@ Status Report Fall Week XX.md is a template for to copy-paste into new Status re
 | Week 5 Status Report | Complete 2nd round of testing | Completed testing at library | App still not working on 2 of our devices |
 | Week 6 Status Report | Work on firebase bugs | Meet to work on our laptops | Update indiividual systems to sucessfully work with firebase |
 | Week 7 Status Report | Work on beta matching | Completed a beta matching UI | Figure out individual bugs |
-| Week 8 Status Report | Complete suggestions on matching from advisor | Compelted individual tasks to make matching fit specifications | No problems to report |
+| Week 8 Status Report | Complete suggestions on matching from advisor | Completed individual tasks to make matching fit specifications | No problems to report |
 | Week 9 Status Report | | | |
 | Week 10 Status Report | | | |
 | Week 11 Status Report | | | |
