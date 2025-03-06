@@ -1,18 +1,16 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'home_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'home_screen.dart';
 
 class ProfileCreationScreen extends StatefulWidget {
   const ProfileCreationScreen({super.key});
 
   @override
   _ProfileCreationScreenState createState() => _ProfileCreationScreenState();
-  //final FirebaseAuth _auth = FirebaseAuth.instance;
-  //final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 }
 
 class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
@@ -20,26 +18,21 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  // Controllers for user input
+  // Controllers
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _customInterestController =
-      TextEditingController();
+  final TextEditingController _customInterestController = TextEditingController();
   final TextEditingController _promptAnswerController = TextEditingController();
   final TextEditingController _customMajorController = TextEditingController();
-  //final FirebaseAuth _auth = FirebaseAuth.instance;
-  //final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  // Privacy policy-related state
+  // Privacy policy states
   bool _privacyPolicyChecked = false;
-
-  // Disclosure of student contact information-related state
   bool _contactInfoPolicyChecked = false;
 
   // Profile Picture
   File? _profileImage;
 
-  // List of pronouns
+  // Pronouns
   final List<String> _pronouns = [
     'He/Him',
     'She/Her',
@@ -47,8 +40,9 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
     'Prefer not to say',
     'Other',
   ];
+  String? _selectedPronoun;
 
-  // List of majors (including 'Major Not Listed')
+  // Majors
   final List<String> _allMajors = [
     'Accounting',
     'African American Studies',
@@ -118,34 +112,43 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
     'Supply Chain Management',
     'Theatre',
     'Urban and Regional Studies',
-    'Major Not Listed', // Add this at the end
+    'Major Not Listed',
   ];
-
-  // Selected interests
-  final Set<String> _selectedInterests = <String>{};
-
-  // Selected values
-  String? _selectedPronoun;
   String? _selectedMajor;
 
-  // Custom Interests
+  // Interests
+  final Set<String> _selectedInterests = <String>{};
+  final List<String> _availableInterests = [
+    'Sports',
+    'Music',
+    'Art',
+    'Technology',
+    'Literature',
+    'Science',
+    'Travel',
+    'Gaming',
+    'Photography',
+    'Cooking',
+    'Reading',
+    'Fitness',
+    'Movies',
+    'Dance',
+    'Writing',
+  ];
   int _customInterestsCount = 0;
   final int _maxCustomInterests = 2;
   final int _customInterestCharLimit = 15;
-  final int _maxTotalInterests = 4; // Total interests limit
+  final int _maxTotalInterests = 4;
 
-  final ImagePicker _picker = ImagePicker();
-
-  // Bio Prompts
+  // Bio prompts
   final List<String> _bioPrompts = [
     'What I\'m most excited for at VCU is ___',
     'I chose VCU because ___',
   ];
   String? _selectedPrompt;
 
-  // Function to pick image from gallery or camera
+  // Pick image
   Future<void> _pickImage() async {
-    // Show the bottom sheet to choose from Gallery or Camera
     showModalBottomSheet(
       context: context,
       builder: (context) => SafeArea(
@@ -156,9 +159,8 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
               title: const Text('Choose from Gallery'),
               onTap: () async {
                 Navigator.of(context).pop();
-                final XFile? image = await _picker.pickImage(
-                  source: ImageSource.gallery,
-                );
+                final XFile? image =
+                    await ImagePicker().pickImage(source: ImageSource.gallery);
                 if (image != null) {
                   setState(() {
                     _profileImage = File(image.path);
@@ -171,9 +173,8 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
               title: const Text('Take a Photo'),
               onTap: () async {
                 Navigator.of(context).pop();
-                final XFile? image = await _picker.pickImage(
-                  source: ImageSource.camera,
-                );
+                final XFile? image =
+                    await ImagePicker().pickImage(source: ImageSource.camera);
                 if (image != null) {
                   setState(() {
                     _profileImage = File(image.path);
@@ -187,99 +188,146 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
     );
   }
 
-  void _submitProfile() async {
-    if (_formKey.currentState!.validate() &&
-        _privacyPolicyChecked &&
-        _contactInfoPolicyChecked) {
-      if (_selectedInterests.isEmpty) {
+void _submitProfile() async {
+  if (_formKey.currentState!.validate() &&
+      _privacyPolicyChecked &&
+      _contactInfoPolicyChecked) {
+    // Check for required fields
+    if (_selectedInterests.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select at least one interest')),
+      );
+      return;
+    }
+    if (_selectedPrompt == null || _promptAnswerController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please complete the bio prompt')),
+      );
+      return;
+    }
+
+    // Determine major
+    String major;
+    if (_selectedMajor == 'Major Not Listed') {
+      if (_customMajorController.text.trim().isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please select at least one interest')),
+          const SnackBar(content: Text('Please enter your major')),
         );
         return;
+      } else {
+        major = _customMajorController.text.trim();
       }
+    } else {
+      major = _selectedMajor ?? 'Undeclared';
+    }
 
-      if (_selectedPrompt == null ||
-          _promptAnswerController.text.trim().isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please complete the bio prompt')),
-        );
-        return;
-      }
+    // Build profile data map
+    final profileData = {
+      'name': _nameController.text.trim(),
+      'email': _emailController.text.trim(),
+      'major': major,
+      'pronouns': _selectedPronoun,
+      'interests': _selectedInterests.toList(),
+      'bio': _selectedPrompt!.replaceAll('___', _promptAnswerController.text.trim()),
+      'profile_picture': _profileImage?.path ?? '',
+      'created_at': DateTime.now(),
+    };
 
-      // Determine the major to use
-      String major = '';
-      if (_selectedMajor == 'Major Not Listed') {
-        if (_customMajorController.text.trim().isEmpty) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Please enter your major')),
+    final String email = profileData['email'] as String;
+    final String password = 'dummyPassword123!';
+
+    try {
+      // 1) Attempt to create a new user in Firebase Auth
+      UserCredential userCredential =
+          await _auth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      // 2) If creation succeeds, store doc in Firestore
+      final String uid = userCredential.user!.uid;
+      await _firestore.collection('users').doc(uid).set(profileData);
+
+      // 3) Navigate directly to HomeScreen
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => HomeScreen(email: email),
+        ),
+      );
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Profile Submitted Successfully!')),
+      );
+
+    } on FirebaseAuthException catch (e) {
+      // If the email is already in use, sign them in instead of failing
+      if (e.code == 'email-already-in-use') {
+        try {
+          // Sign in with the same dummy password
+          UserCredential existingUser = await _auth.signInWithEmailAndPassword(
+            email: email,
+            password: password,
           );
-          return;
-        } else {
-          major = _customMajorController.text.trim();
+
+          final String uid = existingUser.user!.uid;
+
+          // Optionally update the doc if you want to refresh any data
+          // If the doc doesn't exist, create it; if it does, you can update it:
+          final docRef = _firestore.collection('users').doc(uid);
+          final docSnap = await docRef.get();
+
+          if (!docSnap.exists) {
+            // Create the doc if it doesn't exist
+            await docRef.set(profileData);
+          } else {
+            // Or optionally update some fields if you want
+            // await docRef.update(profileData);
+          }
+
+          // Navigate to HomeScreen
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => HomeScreen(email: email),
+            ),
+          );
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Welcome back, $email!')),
+          );
+
+        } catch (signInError) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Sign-in failed: $signInError')),
+          );
         }
       } else {
-        major = _selectedMajor!;
-      }
-
-      // Collect all the data
-      final Map<String, dynamic> profileData = {
-        'name': _nameController.text.trim(),
-        'email': _emailController.text.trim(),
-        'major': major,
-        'pronouns': _selectedPronoun,
-        'interests': _selectedInterests.toList(),
-        'bio': _selectedPrompt!
-            .replaceAll('___', _promptAnswerController.text.trim()),
-        'profile_picture': _profileImage?.path ?? '',
-        'created_at': DateTime.now(),
-      };
-
-      try {
-        // Step 1: Register the user with Firebase Authentication
-        UserCredential userCredential =
-            await _auth.createUserWithEmailAndPassword(
-          email: profileData['email'],
-          password:
-              'dummyPassword123!', // Replace with a secure password system
-        );
-
-        // Step 2: Save user profile to Firestore
-        String uid = userCredential.user!.uid;
-        await _firestore.collection('users').doc(uid).set(profileData);
-
-        // Success message
+        // Handle other FirebaseAuth exceptions
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Profile Submitted Successfully!')),
-        );
-
-        // Navigate to Home Screen
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-              builder: (context) => const HomeScreen(
-                    email: '',
-                  )),
-        );
-      } catch (e) {
-        // Handle errors
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${e.toString()}')),
+          SnackBar(content: Text('Error: ${e.message}')),
         );
       }
-    } else if (!_privacyPolicyChecked) {
+    } catch (generalError) {
+      // Any non-FirebaseAuthException
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please agree to the Privacy Policy')),
-      );
-    } else if (!_contactInfoPolicyChecked) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text(
-                'Please agree to the Disclosure of Student Contact Information')),
+        SnackBar(content: Text('Error: $generalError')),
       );
     }
+  } else if (!_privacyPolicyChecked) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Please agree to the Privacy Policy')),
+    );
+  } else if (!_contactInfoPolicyChecked) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+          content: Text('Please agree to the Disclosure of Student Contact Information')),
+    );
   }
+}
 
-  // Function to open privacy policy link
+
+  // Open privacy policy
   Future<void> _openPrivacyPolicy() async {
     final Uri url = Uri.parse('https://www.vcu.edu/privacy-statement/');
     if (!await launchUrl(url)) {
@@ -289,7 +337,7 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
     }
   }
 
-  // Function to open disclosure policy link
+  // Open contact info policy
   Future<void> _openContactInfoPolicy() async {
     final Uri url = Uri.parse(
         'https://registrar.vcu.edu/records/family-educational-rights-and-privacy-act/student-contact-information/');
@@ -309,10 +357,10 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Form(
-          key: _formKey, // Assign the form key
+          key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
+            children: [
               // Profile Picture
               Center(
                 child: Stack(
@@ -344,7 +392,7 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
               ),
               const SizedBox(height: 24.0),
 
-              // Full Name Field
+              // Name Field
               TextFormField(
                 controller: _nameController,
                 decoration: const InputDecoration(
@@ -388,7 +436,7 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
                     border: OutlineInputBorder(),
                   ),
                   value: _selectedMajor,
-                  isExpanded: true, // Fixes overflow
+                  isExpanded: true,
                   items: _allMajors
                       .map((major) => DropdownMenuItem(
                             value: major,
@@ -413,7 +461,7 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
               ),
               const SizedBox(height: 16.0),
 
-              // Custom Major Input (Shown only when 'Major Not Listed' is selected)
+              // Custom Major
               if (_selectedMajor == 'Major Not Listed') ...[
                 TextFormField(
                   controller: _customMajorController,
@@ -429,7 +477,7 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
                 const SizedBox(height: 16.0),
               ],
 
-              // Pronouns Dropdown
+              // Pronouns
               DropdownButtonFormField<String>(
                 decoration: const InputDecoration(
                   labelText: 'Pronouns',
@@ -451,35 +499,26 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
               ),
               const SizedBox(height: 16.0),
 
-              // Interests Section
+              // Interests
               const Text(
                 'Select Your Interests',
-                style: TextStyle(
-                  fontSize: 16.0,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8.0),
-
-              // Instructions
               Text(
-                'Choose up to $_maxTotalInterests interests that you are passionate about. You can also add up to $_maxCustomInterests custom interests.',
-                style: TextStyle(
-                  fontSize: 14.0,
-                  color: Colors.grey[600],
-                ),
+                'Choose up to $_maxTotalInterests interests you’re passionate about. You can also add up to $_maxCustomInterests custom interests.',
+                style: TextStyle(fontSize: 14.0, color: Colors.grey[600]),
               ),
               const SizedBox(height: 8.0),
 
-              // Interest Selection Grid
               GridView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3, // Number of columns
+                  crossAxisCount: 3,
                   crossAxisSpacing: 8.0,
                   mainAxisSpacing: 8.0,
-                  childAspectRatio: 2.5, // Adjust as needed
+                  childAspectRatio: 2.5,
                 ),
                 itemCount: _availableInterests.length,
                 itemBuilder: (context, index) {
@@ -496,8 +535,10 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
                           } else {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                  content: Text(
-                                      'You can select up to $_maxTotalInterests interests in total')),
+                                content: Text(
+                                  'You can select up to $_maxTotalInterests interests in total',
+                                ),
+                              ),
                             );
                           }
                         }
@@ -513,7 +554,7 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
                                   color: Colors.black26,
                                   offset: Offset(0, 4),
                                   blurRadius: 4.0,
-                                ),
+                                )
                               ]
                             : null,
                       ),
@@ -523,9 +564,8 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             color: isSelected ? Colors.white : Colors.black,
-                            fontWeight: isSelected
-                                ? FontWeight.bold
-                                : FontWeight.normal,
+                            fontWeight:
+                                isSelected ? FontWeight.bold : FontWeight.normal,
                           ),
                         ),
                       ),
@@ -535,7 +575,7 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
               ),
               const SizedBox(height: 16.0),
 
-              // Custom Interest Input
+              // Custom Interest
               TextField(
                 controller: _customInterestController,
                 maxLength: _customInterestCharLimit,
@@ -545,7 +585,7 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
                       'Enter your interest (max $_customInterestCharLimit chars)',
                   prefixIcon: const Icon(Icons.add),
                   border: const OutlineInputBorder(),
-                  counterText: '', // Hide character counter
+                  counterText: '',
                   suffixIcon: IconButton(
                     icon: const Icon(Icons.check),
                     onPressed: _customInterestsCount < _maxCustomInterests
@@ -557,8 +597,10 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
                                   _customInterestCharLimit) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
-                                      content: Text(
-                                          'Interest must be less than $_customInterestCharLimit characters')),
+                                    content: Text(
+                                      'Interest must be less than $_customInterestCharLimit characters',
+                                    ),
+                                  ),
                                 );
                                 return;
                               }
@@ -567,7 +609,8 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
                                       .contains(customInterest)) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
-                                      content: Text('Interest already added')),
+                                    content: Text('Interest already added'),
+                                  ),
                                 );
                               } else if (_selectedInterests.length <
                                   _maxTotalInterests) {
@@ -579,25 +622,24 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
                               } else {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
-                                      content: Text(
-                                          'You can select up to $_maxTotalInterests interests in total')),
+                                    content: Text(
+                                      'You can select up to $_maxTotalInterests interests in total',
+                                    ),
+                                  ),
                                 );
                               }
                             }
                           }
-                        : null, // Disable button if limit reached
+                        : null,
                   ),
                 ),
               ),
               const SizedBox(height: 16.0),
 
-              // Display Selected Interests
               Text(
                 'Selected Interests (${_selectedInterests.length}/$_maxTotalInterests):',
                 style: const TextStyle(
-                  fontSize: 16.0,
-                  fontWeight: FontWeight.bold,
-                ),
+                    fontSize: 16.0, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8.0),
               Wrap(
@@ -623,17 +665,12 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
               ),
               const SizedBox(height: 16.0),
 
-              // Prompt Section
+              // Prompt
               const Text(
                 'Complete a Prompt',
-                style: TextStyle(
-                  fontSize: 16.0,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8.0),
-
-              // Prompt Dropdown
               DropdownButtonFormField<String>(
                 decoration: const InputDecoration(
                   labelText: 'Select a Prompt',
@@ -650,26 +687,23 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
                 onChanged: (value) {
                   setState(() {
                     _selectedPrompt = value;
-                    _promptAnswerController.clear(); // Clear previous answer
+                    _promptAnswerController.clear();
                   });
                 },
                 validator: (value) =>
                     value == null ? 'Please select a prompt' : null,
               ),
               const SizedBox(height: 16.0),
-
-              // If a prompt is selected, show the answer field
               if (_selectedPrompt != null) ...[
                 TextFormField(
                   controller: _promptAnswerController,
                   decoration: InputDecoration(
                     labelText: 'Your Answer',
-                    hintText: _selectedPrompt != null
-                        ? _selectedPrompt!.replaceAll('___', '...')
-                        : 'Fill in the blank',
+                    hintText:
+                        _selectedPrompt!.replaceAll('___', '...'),
                     border: const OutlineInputBorder(),
                   ),
-                  maxLength: 100, // Set your desired character limit
+                  maxLength: 100,
                   validator: (value) => value == null || value.isEmpty
                       ? 'Please complete the prompt'
                       : null,
@@ -677,7 +711,7 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
                 const SizedBox(height: 16.0),
               ],
 
-              // Privacy Policy Checkbox using CheckboxListTile
+              // Privacy
               CheckboxListTile(
                 value: _privacyPolicyChecked,
                 onChanged: (bool? value) {
@@ -687,27 +721,12 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
                 },
                 title: GestureDetector(
                   onTap: _openPrivacyPolicy,
-                  child: RichText(
-                    text: const TextSpan(
-                      text: 'I agree to the ',
-                      style: TextStyle(color: Colors.black),
-                      children: [
-                        TextSpan(
-                          text: 'Privacy Policy',
-                          style: TextStyle(
-                            color: Colors.blue,
-                            decoration: TextDecoration.underline,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                  child: const Text('I agree to the Privacy Policy'),
                 ),
                 controlAffinity: ListTileControlAffinity.leading,
-                contentPadding: EdgeInsets.zero,
               ),
 
-              // Disclosure of student contact information Checkbox using CheckboxListTile
+              // Contact Info
               CheckboxListTile(
                 value: _contactInfoPolicyChecked,
                 onChanged: (bool? value) {
@@ -717,29 +736,14 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
                 },
                 title: GestureDetector(
                   onTap: _openContactInfoPolicy,
-                  child: RichText(
-                    text: const TextSpan(
-                      text: 'I agree to the ',
-                      style: TextStyle(color: Colors.black),
-                      children: [
-                        TextSpan(
-                          text: 'Disclosure of Student Contact Information',
-                          style: TextStyle(
-                            color: Colors.blue,
-                            decoration: TextDecoration.underline,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                  child:
+                      const Text('I agree to the Disclosure of Student Contact Information'),
                 ),
                 controlAffinity: ListTileControlAffinity.leading,
-                contentPadding: EdgeInsets.zero,
               ),
-
               const SizedBox(height: 32.0),
 
-              // Submit Button
+              // Submit
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
@@ -757,23 +761,4 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
       ),
     );
   }
-
-  // List of available interests (add this if missing)
-  final List<String> _availableInterests = [
-    'Sports',
-    'Music',
-    'Art',
-    'Technology',
-    'Literature',
-    'Science',
-    'Travel',
-    'Gaming',
-    'Photography',
-    'Cooking',
-    'Reading',
-    'Fitness',
-    'Movies',
-    'Dance',
-    'Writing',
-  ];
 }

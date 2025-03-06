@@ -4,9 +4,11 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'login_screen.dart';
+import 'matching_screen.dart'; // <-- Import your MatchingScreen here
 
 class HomeScreen extends StatefulWidget {
-  final String email; // Email passed from Login or Profile Creation screen
+  final String email;
 
   const HomeScreen({Key? key, required this.email}) : super(key: key);
 
@@ -18,7 +20,6 @@ class _HomeScreenState extends State<HomeScreen> {
   late Map<String, dynamic> _currentUser;
   bool _isLoading = true;
 
-  // Pages for Bottom Navigation Bar
   final List<Widget> _pages = [];
   int _selectedIndex = 0;
 
@@ -28,7 +29,6 @@ class _HomeScreenState extends State<HomeScreen> {
     _fetchUserData();
   }
 
-  // Fetch user data from Firestore using email
   Future<void> _fetchUserData() async {
     try {
       final userQuery = await FirebaseFirestore.instance
@@ -56,30 +56,42 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  // Navigation Bar Tap Handler
   void _onBottomNavItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
     });
   }
 
+  Future<void> _logOut() async {
+    try {
+      await FirebaseAuth.instance.signOut();
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error logging out: ${e.toString()}')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
     }
 
     return Scaffold(
       appBar: AppBar(
         title: const Text(
           'RAMily',
-          style: TextStyle(
-            color: Colors.black87,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold),
         ),
         backgroundColor: Colors.white,
-        elevation: 0, // Remove shadow
+        elevation: 0,
         centerTitle: true,
         iconTheme: const IconThemeData(color: Colors.black87),
       ),
@@ -111,7 +123,97 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // User Info Section
+  Widget _buildHomeContent() {
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _buildUserInfoSection(),
+          _buildQuickAccessButtons(),
+          _buildNewsFeedSection(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMessagesContent() {
+    return const Center(
+      child: Text(
+        'Messages',
+        style: TextStyle(fontSize: 18, color: Colors.black87),
+      ),
+    );
+  }
+
+  Widget _buildProfileContent() {
+    return FutureBuilder<DocumentSnapshot>(
+      future: FirebaseFirestore.instance
+          .collection('users')
+          .doc(FirebaseAuth.instance.currentUser!.uid)
+          .get(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (snapshot.hasError) {
+          return const Center(child: Text('Error loading profile information.'));
+        }
+        if (!snapshot.hasData || !snapshot.data!.exists) {
+          return const Center(child: Text('No profile data found.'));
+        }
+
+        final userData = snapshot.data!.data() as Map<String, dynamic>;
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: CircleAvatar(
+                  radius: 60,
+                  backgroundImage: userData['profile_picture'] != ''
+                      ? FileImage(File(userData['profile_picture']))
+                          as ImageProvider
+                      : const AssetImage('assets/default_profile.png'),
+                ),
+              ),
+              const SizedBox(height: 16.0),
+              Text(
+                'Name: ${userData['name']}',
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8.0),
+              Text(
+                'Email: ${userData['email']}',
+                style: const TextStyle(fontSize: 16),
+              ),
+              const SizedBox(height: 8.0),
+              Text(
+                'Major: ${userData['major']}',
+                style: const TextStyle(fontSize: 16),
+              ),
+              const SizedBox(height: 8.0),
+              Text(
+                'Pronouns: ${userData['pronouns'] ?? 'Not specified'}',
+                style: const TextStyle(fontSize: 16),
+              ),
+              const SizedBox(height: 8.0),
+              Text(
+                'Interests: ${userData['interests'].join(', ')}',
+                style: const TextStyle(fontSize: 16),
+              ),
+              const SizedBox(height: 8.0),
+              Text(
+                'Bio: ${userData['bio']}',
+                style: const TextStyle(fontSize: 16),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildUserInfoSection() {
     return Padding(
       padding: const EdgeInsets.all(16.0),
@@ -121,7 +223,7 @@ class _HomeScreenState extends State<HomeScreen> {
             radius: 30,
             backgroundImage: _currentUser['profile_picture'] != null &&
                     _currentUser['profile_picture'].isNotEmpty
-                ? NetworkImage(_currentUser['profile_picture'])
+                ? FileImage(File(_currentUser['profile_picture']))
                 : const AssetImage('assets/default_profile.png')
                     as ImageProvider,
           ),
@@ -141,7 +243,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // Quick Access Buttons
   Widget _buildQuickAccessButtons() {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 24.0),
@@ -152,21 +253,28 @@ class _HomeScreenState extends State<HomeScreen> {
             icon: Icons.map_outlined,
             label: 'Traditions',
             onTap: () {
-              // Navigate to Traditions screen
+              // TODO: Navigate to Traditions screen
             },
           ),
           _buildQuickButton(
             icon: Icons.people_outline,
             label: 'Matching',
             onTap: () {
-              // Navigate to Matching screen
+              // Navigate to MatchingScreen
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => MatchingScreen(
+                  ),
+                ),
+              );
             },
           ),
           _buildQuickButton(
             icon: Icons.school_outlined,
             label: 'Rambassadors',
             onTap: () {
-              // Navigate to Rambassadors screen
+              // TODO: Navigate to Rambassadors screen
             },
           ),
         ],
@@ -189,23 +297,15 @@ class _HomeScreenState extends State<HomeScreen> {
               shape: BoxShape.circle,
             ),
             padding: const EdgeInsets.all(16),
-            child: Icon(
-              icon,
-              size: 28,
-              color: Colors.black87,
-            ),
+            child: Icon(icon, size: 28, color: Colors.black87),
           ),
           const SizedBox(height: 8),
-          Text(
-            label,
-            style: const TextStyle(color: Colors.black87),
-          ),
+          Text(label, style: const TextStyle(color: Colors.black87)),
         ],
       ),
     );
   }
 
-  // News Feed Section
   Widget _buildNewsFeedSection() {
     final List<Map<String, String>> newsFeed = [
       {
@@ -245,7 +345,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 style: const TextStyle(color: Colors.black54),
               ),
               onTap: () {
-                // Navigate to detailed news item if needed
+                // Could navigate to a detailed news page
               },
             ),
           ),
@@ -254,121 +354,20 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // Home Content
-  Widget _buildHomeContent() {
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _buildUserInfoSection(),
-          _buildQuickAccessButtons(),
-          _buildNewsFeedSection(),
-        ],
-      ),
-    );
-  }
-
-  // Messages Content Placeholder
-  Widget _buildMessagesContent() {
-    return const Center(
-      child: Text(
-        'Messages',
-        style: TextStyle(fontSize: 18, color: Colors.black87),
-      ),
-    );
-  }
-
-  Widget _buildProfileContent() {
-    return FutureBuilder<DocumentSnapshot>(
-      future: FirebaseFirestore.instance
-          .collection('users')
-          .doc(FirebaseAuth.instance.currentUser!.uid)
-          .get(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        if (snapshot.hasError) {
-          return const Center(
-              child: Text('Error loading profile information.'));
-        }
-
-        if (!snapshot.hasData || !snapshot.data!.exists) {
-          return const Center(child: Text('No profile data found.'));
-        }
-
-        final userData = snapshot.data!.data() as Map<String, dynamic>;
-
-        return SingleChildScrollView(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: CircleAvatar(
-                  radius: 60,
-                  backgroundImage: userData['profile_picture'] != ''
-                      ? FileImage(File(userData['profile_picture']))
-                          as ImageProvider
-                      : const AssetImage('assets/default_profile.png'),
-                ),
-              ),
-              const SizedBox(height: 16.0),
-              Text(
-                'Name: ${userData['name']}',
-                style:
-                    const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8.0),
-              Text(
-                'Email: ${userData['email']}',
-                style: const TextStyle(fontSize: 16),
-              ),
-              const SizedBox(height: 8.0),
-              Text(
-                'Major: ${userData['major']}',
-                style: const TextStyle(fontSize: 16),
-              ),
-              const SizedBox(height: 8.0),
-              Text(
-                'Pronouns: ${userData['pronouns'] ?? 'Not specified'}',
-                style: const TextStyle(fontSize: 16),
-              ),
-              const SizedBox(height: 8.0),
-              Text(
-                'Interests: ${userData['interests'].join(', ')}',
-                style: const TextStyle(fontSize: 16),
-              ),
-              const SizedBox(height: 8.0),
-              Text(
-                'Bio: ${userData['bio']}',
-                style: const TextStyle(fontSize: 16),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  // Drawer with user information and links
   Widget _buildDrawer() {
     return Drawer(
       child: ListView(
         padding: EdgeInsets.zero,
         children: [
           DrawerHeader(
-            decoration: BoxDecoration(
-              color: Colors.grey.shade200,
-            ),
+            decoration: BoxDecoration(color: Colors.grey.shade200),
             child: Row(
               children: [
                 CircleAvatar(
                   radius: 30,
                   backgroundImage: _currentUser['profile_picture'] != null &&
                           _currentUser['profile_picture'].isNotEmpty
-                      ? NetworkImage(_currentUser['profile_picture'])
+                      ? FileImage(File(_currentUser['profile_picture']))
                       : const AssetImage('assets/default_profile.png')
                           as ImageProvider,
                 ),
@@ -394,6 +393,14 @@ class _HomeScreenState extends State<HomeScreen> {
             text: 'Navigate',
             onTap: () => _launchURL('https://navigate.vcu.edu/'),
           ),
+          ListTile(
+            leading: const Icon(Icons.exit_to_app, color: Colors.black87),
+            title: const Text(
+              'Log Out',
+              style: TextStyle(color: Colors.black87),
+            ),
+            onTap: _logOut,
+          ),
         ],
       ),
     );
@@ -406,15 +413,11 @@ class _HomeScreenState extends State<HomeScreen> {
   }) {
     return ListTile(
       leading: Icon(icon, color: Colors.black87),
-      title: Text(
-        text,
-        style: const TextStyle(color: Colors.black87),
-      ),
+      title: Text(text, style: const TextStyle(color: Colors.black87)),
       onTap: onTap,
     );
   }
 
-  // Helper method to launch URLs
   void _launchURL(String url) async {
     final Uri uri = Uri.parse(url);
     if (await canLaunchUrl(uri)) {
