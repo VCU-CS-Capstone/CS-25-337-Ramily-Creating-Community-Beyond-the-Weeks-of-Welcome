@@ -13,12 +13,12 @@ Manjari Kumarappan
 Lukasz Kurgan
 
 ## 1) Accomplishments this week ##
-   - Met faculty advisor and project sponsor
-   - Learned project logistics
-   - Cpmpleted team contract
+   - Completed a preliminary test survey
+   - Finalized profile creation
 
 ## 2) Milestones to be completed next week ##
-   - Continue to learn specifications of projects
+   - Update survey questions to advisor specifications
+   - Begin working on database
 
 ## 3) Issues, problems or concerns ##
    - No issues at the moment
