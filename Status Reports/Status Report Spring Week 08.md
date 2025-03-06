@@ -13,11 +13,11 @@ Manjari Kumarappan
 Lukasz Kurgan
 
 ## 1) Accomplishments this week ##
-   - Finished project proposal
-   - Presented project proposal to faculty advisor and sponsor 
+   - Fully worked out firebase bugs 
 
 ## 2) Milestones to be completed next week ##
-   - Continue learning how to work with flutter/dart
+   - Implement changes to UI suggested by advisor
+   - Implement the first working matching system
 
 ## 3) Issues, problems or concerns ##
    - No issues at the moment
