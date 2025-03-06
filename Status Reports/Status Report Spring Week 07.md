@@ -13,10 +13,11 @@ Manjari Kumarappan
 Lukasz Kurgan
 
 ## 1) Accomplishments this week ##
-   - Began working on project proposal
+   - Almost fully fixed firebase bugs
+   - Completed matching screen UI
 
 ## 2) Milestones to be completed next week ##
-   - Complete project proposal
+   - Present the matching screen UI to advisor
 
 ## 3) Issues, problems or concerns ##
-   - No issues at the moment
+   - Fix the last of firebase bugs
