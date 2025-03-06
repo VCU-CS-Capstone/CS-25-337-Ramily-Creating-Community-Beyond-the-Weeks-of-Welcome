@@ -1,0 +1,20 @@
+{
+  "buildFiles": [
+    "C:\\Users\\ralei\\.vscode\\extensions\\flutter\\packages\\flutter_tools\\gradle\\src\\main\\groovy\\CMakeLists.txt"
+  ],
+  "cleanCommandsComponents": [
+    [
+      "C:\\Users\\ralei\\AppData\\Local\\Android\\sdk\\cmake\\3.22.1\\bin\\ninja.exe",
+      "-C",
+      "C:\\Users\\ralei\\Ramily Capstone\\CS-25-337-Ramily-Creating-Community-Beyond-the-Weeks-of-Welcome\\ramily\\android\\app\\.cxx\\Debug\\5ep1h1z5\\arm64-v8a",
+      "clean"
+    ]
+  ],
+  "buildTargetsCommandComponents": [
+    "C:\\Users\\ralei\\AppData\\Local\\Android\\sdk\\cmake\\3.22.1\\bin\\ninja.exe",
+    "-C",
+    "C:\\Users\\ralei\\Ramily Capstone\\CS-25-337-Ramily-Creating-Community-Beyond-the-Weeks-of-Welcome\\ramily\\android\\app\\.cxx\\Debug\\5ep1h1z5\\arm64-v8a",
+    "{LIST_OF_TARGETS_TO_BUILD}"
+  ],
+  "libraries": {}
+}
