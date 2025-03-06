@@ -13,12 +13,11 @@ Manjari Kumarappan
 Lukasz Kurgan
 
 ## 1) Accomplishments this week ##
-   - Met former da Vinci Grads
-   - Learned indepth project specifications
+   - Finalized survey
+   - Added an interim database
 
 ## 2) Milestones to be completed next week ##
-   - Plan future project plans
-   - Get a priority list from the project sponsor
+   - Begin round 1 of testing
 
 ## 3) Issues, problems or concerns ##
-   - There's too many features that can be implemented within the scope of 2 semesters, therefore a priority list is needed
+   - No problems to report
