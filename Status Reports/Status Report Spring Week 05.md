@@ -13,10 +13,11 @@ Manjari Kumarappan
 Lukasz Kurgan
 
 ## 1) Accomplishments this week ##
-   - Found a flutter/dart which supports multi-platform
+   - Completed 2nd round of testing
+   - Able to work out some of the firebase bugs
 
 ## 2) Milestones to be completed next week ##
-   - Begin working on installing flutter, xCode, and Android Studio
+   - Meet to fully workout firebase bugs
 
 ## 3) Issues, problems or concerns ##
-   - No issues at the moment
+   - App not working on 2 of our devices
