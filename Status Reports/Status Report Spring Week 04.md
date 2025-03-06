@@ -13,10 +13,10 @@ Manjari Kumarappan
 Lukasz Kurgan
 
 ## 1) Accomplishments this week ##
-   - Received in depth priority list from project sponsor
+   - Completed 1st round of testing
 
 ## 2) Milestones to be completed next week ##
-   - Search for and research optimal software and coding language for the project
+   - Prepare for 2nd round of testing
 
 ## 3) Issues, problems or concerns ##
-   - No issues at the moment
+   - App stopped working on most of our devices
