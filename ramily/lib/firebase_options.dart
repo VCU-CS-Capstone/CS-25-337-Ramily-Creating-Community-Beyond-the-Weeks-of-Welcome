@@ -17,26 +17,17 @@ import 'package:flutter/foundation.dart'
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
-      throw UnsupportedError(
-        'DefaultFirebaseOptions have not been configured for web - '
-        'you can reconfigure this by running the FlutterFire CLI again.',
-      );
+      return web;
     }
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for android - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return android;
       case TargetPlatform.iOS:
         return ios;
       case TargetPlatform.macOS:
         return macos;
       case TargetPlatform.windows:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for windows - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return windows;
       case TargetPlatform.linux:
         throw UnsupportedError(
           'DefaultFirebaseOptions have not been configured for linux - '
@@ -67,6 +58,37 @@ class DefaultFirebaseOptions {
     databaseURL: 'https://ramily-845f9-default-rtdb.firebaseio.com',
     storageBucket: 'ramily-845f9.firebasestorage.app',
     iosBundleId: 'com.example.ramily',
+  );
+
+  static const FirebaseOptions web = FirebaseOptions(
+    apiKey: 'AIzaSyB0QJQkTOtBZOB_288KcTCjwYactXr4lQs',
+    appId: '1:942584945595:web:65bb380fc91d9c2c15829e',
+    messagingSenderId: '942584945595',
+    projectId: 'ramily-845f9',
+    authDomain: 'ramily-845f9.firebaseapp.com',
+    databaseURL: 'https://ramily-845f9-default-rtdb.firebaseio.com',
+    storageBucket: 'ramily-845f9.firebasestorage.app',
+    measurementId: 'G-LMVGF4W3LS',
+  );
+
+  static const FirebaseOptions android = FirebaseOptions(
+    apiKey: 'AIzaSyBhG3vhcCEcnl0xW-fGTMn7vtGG-DBeITE',
+    appId: '1:942584945595:android:70e6b80dd7f46a1315829e',
+    messagingSenderId: '942584945595',
+    projectId: 'ramily-845f9',
+    databaseURL: 'https://ramily-845f9-default-rtdb.firebaseio.com',
+    storageBucket: 'ramily-845f9.firebasestorage.app',
+  );
+
+  static const FirebaseOptions windows = FirebaseOptions(
+    apiKey: 'AIzaSyB0QJQkTOtBZOB_288KcTCjwYactXr4lQs',
+    appId: '1:942584945595:web:65bb380fc91d9c2c15829e',
+    messagingSenderId: '942584945595',
+    projectId: 'ramily-845f9',
+    authDomain: 'ramily-845f9.firebaseapp.com',
+    databaseURL: 'https://ramily-845f9-default-rtdb.firebaseio.com',
+    storageBucket: 'ramily-845f9.firebasestorage.app',
+    measurementId: 'G-LMVGF4W3LS',
   );
 
 }
