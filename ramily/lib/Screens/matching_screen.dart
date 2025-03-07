@@ -143,13 +143,11 @@ class _MatchingScreenState extends State<MatchingScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Profile Picture Placeholder
-            Container(
+            Image.asset(
+              'assets/logo.png',
               width: 100,
               height: 100,
-              color: Colors.grey[300],
-              child: const Icon(Icons.person, color: Colors.grey),
-              alignment: Alignment.center,
+              fit: BoxFit.cover,
             ),
             const SizedBox(height: 8),
             Text(
