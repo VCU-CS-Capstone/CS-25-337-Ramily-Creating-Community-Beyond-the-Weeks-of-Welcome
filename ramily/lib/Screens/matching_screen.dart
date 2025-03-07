@@ -16,7 +16,7 @@ class _MatchingScreenState extends State<MatchingScreen> {
     {'name': 'Ethan Lucas', 'major': 'Environmental Studies', 'pronouns': 'He/Him', 'interests': 'Travel, Movies, Music, Literature', 'bio': 'I chose VCU because of the integration with the city and the focus on environmental research.'},
     {'name': 'Scott Grant', 'major': 'Design', 'pronouns': 'They/Them', 'interests': 'Art, Music, Movies, Fashion', 'bio': 'What I’m most excited for at VCU is collaborating on design projects and using creative software.'},
     {'name': 'Felix Webb', 'major': 'Psychology', 'pronouns': 'He/Him', 'interests': 'Travel, Photography, Reading, Fitness', 'bio': 'I chose VCU because of the diverse student body and its excellent psychology program.'},
-    {'name': 'Venessa Page', 'major': 'Electrical Engineering', 'pronouns': 'She/Her', 'interests': 'Coding, Hiking, Music, Photography', 'bio': 'What I’m most excited for at VCU is building and testing circuits as part of my engineering coursework.'},
+    {'name': 'Vanessa Page', 'major': 'Electrical Engineering', 'pronouns': 'She/Her', 'interests': 'Coding, Hiking, Music, Photography', 'bio': 'What I’m most excited for at VCU is building and testing circuits as part of my engineering coursework.'},
     {'name': 'Sophia Davis', 'major': 'Nursing', 'pronouns': 'She/Her', 'interests': 'Fitness, Cooking, Reading, Hiking', 'bio': 'What I’m most excited for at VCU is gaining hands-on experience in the clinical setting.'},
     {'name': 'Michael Johnson', 'major': 'Finance', 'pronouns': 'He/Him', 'interests': 'Reading, Sports, Travel, Cooking', 'bio': 'I chose VCU because of its strong finance program and the internship opportunities available in Richmond.'},
     {'name': 'Ava Taylor', 'major': 'Biology', 'pronouns': 'She/Her', 'interests': 'Science, Music, Cooking, Hiking', 'bio': 'I chose VCU because of its cutting-edge research in genetics and the opportunity to work with faculty on lab projects.'},
@@ -40,20 +40,35 @@ class _MatchingScreenState extends State<MatchingScreen> {
     {'name': 'Jacob Martinez', 'major': 'Political Science', 'pronouns': 'He/Him', 'interests': 'Reading, Sports, Politics, Movies', 'bio': 'What I’m most excited for at VCU is engaging in discussions about the future of global politics and social change.'},
     {'name': 'Lily Carter', 'major': 'Art History', 'pronouns': 'She/Her', 'interests': 'Art, Travel, Photography, Literature', 'bio': 'I chose VCU because of its strong focus on contemporary art and global art history.'},
     {'name': 'Daniel Evans', 'major': 'History', 'pronouns': 'He/Him', 'interests': 'Travel, Literature, Reading, Politics', 'bio': 'What I’m most excited for at VCU is exploring the connections between historical events and contemporary culture.'},
-    // Add more users until you reach 50...
+    // Additional users could be added here...
   ];
+
+  // New variables for load more functionality
+  List<Map<String, String>> _shuffledUsers = [];
+  int _currentIndex = 0;
+  final int _batchSize = 5;
 
   @override
   void initState() {
     super.initState();
-    _reloadUserList();
+    _initializeUserList();
   }
 
-  void _reloadUserList() {
+  void _initializeUserList() {
     final random = Random();
-    final shuffledList = List<Map<String, String>>.from(allUsers)..shuffle(random); // Shuffle the list with a random seed
+    _shuffledUsers = List<Map<String, String>>.from(allUsers)..shuffle(random);
+    _currentIndex = 0;
+    matchedUsers = [];
+    _loadMoreUsers();
+  }
+
+  void _loadMoreUsers() {
+    final int endIndex = (_currentIndex + _batchSize) > _shuffledUsers.length
+        ? _shuffledUsers.length
+        : _currentIndex + _batchSize;
     setState(() {
-      matchedUsers = shuffledList.take(5).toList(); // Take the first 5 users from the shuffled list
+      matchedUsers.addAll(_shuffledUsers.sublist(_currentIndex, endIndex));
+      _currentIndex = endIndex;
     });
   }
 
@@ -84,7 +99,6 @@ class _MatchingScreenState extends State<MatchingScreen> {
               ),
             ),
             const SizedBox(height: 20),
-
             Column(
               children: matchedUsers.map((user) {
                 return _buildUserCard(
@@ -98,11 +112,12 @@ class _MatchingScreenState extends State<MatchingScreen> {
               }).toList(),
             ),
             const SizedBox(height: 20),
-
-            ElevatedButton(
-              onPressed: _reloadUserList,
-              child: const Text('Reload List'),
-            ),
+            _currentIndex < _shuffledUsers.length
+                ? ElevatedButton(
+                    onPressed: _loadMoreUsers,
+                    child: const Text('Load More'),
+                  )
+                : const Text('No more users'),
           ],
         ),
       ),
@@ -132,13 +147,11 @@ class _MatchingScreenState extends State<MatchingScreen> {
             Container(
               width: 100,
               height: 100,
-              color: Colors.grey[300], // Light grey placeholder for the profile picture
-              child: const Icon(Icons.person, color: Colors.grey), // Placeholder icon
+              color: Colors.grey[300],
+              child: const Icon(Icons.person, color: Colors.grey),
               alignment: Alignment.center,
             ),
             const SizedBox(height: 8),
-
-            // Name
             Text(
               'Name: $name',
               style: const TextStyle(
@@ -147,20 +160,12 @@ class _MatchingScreenState extends State<MatchingScreen> {
               ),
             ),
             const SizedBox(height: 8),
-
-            // Major
             Text('Major: $major'),
             const SizedBox(height: 4),
-
-            // Pronouns
             Text('Pronouns: $pronouns'),
             const SizedBox(height: 4),
-
-            // Interests
             Text('Interests: $interests'),
             const SizedBox(height: 8),
-
-            // Bio (static prompt + user-specific bio)
             Text(
               'Bio: $bio',
               style: const TextStyle(
@@ -170,8 +175,6 @@ class _MatchingScreenState extends State<MatchingScreen> {
               ),
             ),
             const SizedBox(height: 12),
-
-            // Contact Button
             Align(
               alignment: Alignment.centerRight,
               child: TextButton(
