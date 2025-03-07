@@ -5,7 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'login_screen.dart';
-import 'matching_screen.dart'; // <-- Import your MatchingScreen here
+import 'matching_screen.dart';
+import 'profile_editor.dart';
 
 class HomeScreen extends StatefulWidget {
   final String email;
@@ -74,6 +75,15 @@ class _HomeScreenState extends State<HomeScreen> {
         SnackBar(content: Text('Error logging out: ${e.toString()}')),
       );
     }
+  }
+
+  void _openEditor() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ProfileEditorScreen(email: widget.email,), // Navigate to the ProfileEditor screen
+      ),
+    );
   }
 
   @override
@@ -174,7 +184,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   backgroundImage: userData['profile_picture'] != ''
                       ? FileImage(File(userData['profile_picture']))
                           as ImageProvider
-                      : const AssetImage('assets/default_profile.png'),
+                      : const AssetImage('assets/logo.png'),
                 ),
               ),
               const SizedBox(height: 16.0),
@@ -207,6 +217,17 @@ class _HomeScreenState extends State<HomeScreen> {
                 'Bio: ${userData['bio']}',
                 style: const TextStyle(fontSize: 16),
               ),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _openEditor,
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16.0),
+                    textStyle: const TextStyle(fontSize: 18.0),
+                  ),
+                  child: const Text('Edit Profile'),
+                ),
+              ),
             ],
           ),
         );
@@ -224,7 +245,7 @@ class _HomeScreenState extends State<HomeScreen> {
             backgroundImage: _currentUser['profile_picture'] != null &&
                     _currentUser['profile_picture'].isNotEmpty
                 ? FileImage(File(_currentUser['profile_picture']))
-                : const AssetImage('assets/default_profile.png')
+                : const AssetImage('assets/logo.png')
                     as ImageProvider,
           ),
           const SizedBox(width: 16),
@@ -368,7 +389,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   backgroundImage: _currentUser['profile_picture'] != null &&
                           _currentUser['profile_picture'].isNotEmpty
                       ? FileImage(File(_currentUser['profile_picture']))
-                      : const AssetImage('assets/default_profile.png')
+                      : const AssetImage('assets/logo.png')
                           as ImageProvider,
                 ),
                 const SizedBox(width: 16),

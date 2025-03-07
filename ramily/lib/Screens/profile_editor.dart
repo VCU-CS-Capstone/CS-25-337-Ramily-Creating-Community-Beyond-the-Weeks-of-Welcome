@@ -6,28 +6,26 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'home_screen.dart';
 
-class ProfileCreationScreen extends StatefulWidget {
-  const ProfileCreationScreen({super.key});
+class ProfileEditorScreen extends StatefulWidget {
+  final String email;
+
+  const ProfileEditorScreen({Key? key, required this.email}) : super(key: key);
 
   @override
-  _ProfileCreationScreenState createState() => _ProfileCreationScreenState();
+  _ProfileEditorScreenState createState() => _ProfileEditorScreenState();
 }
 
-class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
+class _ProfileEditorScreenState extends State<ProfileEditorScreen> {
   final _formKey = GlobalKey<FormState>();
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  late Map<String, dynamic> _currentUser;
 
   // Controllers
   final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _customInterestController = TextEditingController();
-  final TextEditingController _promptAnswerController = TextEditingController();
   final TextEditingController _customMajorController = TextEditingController();
-
-  // Privacy policy states
-  bool _privacyPolicyChecked = false;
-  bool _contactInfoPolicyChecked = false;
+  final TextEditingController _promptAnswerController = TextEditingController();
+  final TextEditingController _customInterestController = TextEditingController();
 
   // Profile Picture
   File? _profileImage;
@@ -160,7 +158,7 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
               onTap: () async {
                 Navigator.of(context).pop();
                 final XFile? image =
-                    await ImagePicker().pickImage(source: ImageSource.gallery);
+                await ImagePicker().pickImage(source: ImageSource.gallery);
                 if (image != null) {
                   setState(() {
                     _profileImage = File(image.path);
@@ -174,7 +172,7 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
               onTap: () async {
                 Navigator.of(context).pop();
                 final XFile? image =
-                    await ImagePicker().pickImage(source: ImageSource.camera);
+                await ImagePicker().pickImage(source: ImageSource.camera);
                 if (image != null) {
                   setState(() {
                     _profileImage = File(image.path);
@@ -188,171 +186,94 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
     );
   }
 
-void _submitProfile() async {
-  if (_formKey.currentState!.validate() &&
-      _privacyPolicyChecked &&
-      _contactInfoPolicyChecked) {
-    // Check for required fields
-    if (_selectedInterests.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select at least one interest')),
-      );
-      return;
-    }
-    if (_selectedPrompt == null || _promptAnswerController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please complete the bio prompt')),
-      );
-      return;
-    }
-
-    // Determine major
-    String major;
-    if (_selectedMajor == 'Major Not Listed') {
-      if (_customMajorController.text.trim().isEmpty) {
+  void _submitProfile() async {
+    if (_formKey.currentState!.validate()) {
+      // Check for required fields
+      if (_selectedInterests.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please enter your major')),
+          const SnackBar(content: Text('Please select at least one interest')),
         );
         return;
-      } else {
-        major = _customMajorController.text.trim();
       }
-    } else {
-      major = _selectedMajor ?? 'Undeclared';
-    }
+      if (_selectedPrompt == null || _promptAnswerController.text.trim().isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please complete the bio prompt')),
+        );
+        return;
+      }
 
-    // Build profile data map
-    final profileData = {
-      'name': _nameController.text.trim(),
-      'email': _emailController.text.trim(),
-      'major': major,
-      'pronouns': _selectedPronoun,
-      'interests': _selectedInterests.toList(),
-      'bio': _selectedPrompt!.replaceAll('___', _promptAnswerController.text.trim()),
-      'profile_picture': _profileImage?.path ?? '',
-      'created_at': DateTime.now(),
-    };
-
-    final String email = profileData['email'] as String;
-    final String password = 'dummyPassword123!';
-
-    try {
-      // 1) Attempt to create a new user in Firebase Auth
-      UserCredential userCredential =
-          await _auth.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-
-      // 2) If creation succeeds, store doc in Firestore
-      final String uid = userCredential.user!.uid;
-      await _firestore.collection('users').doc(uid).set(profileData);
-
-      // 3) Navigate directly to HomeScreen
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => HomeScreen(email: email),
-        ),
-      );
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Profile Submitted Successfully!')),
-      );
-
-    } on FirebaseAuthException catch (e) {
-      // If the email is already in use, sign them in instead of failing
-      if (e.code == 'email-already-in-use') {
-        try {
-          // Sign in with the same dummy password
-          UserCredential existingUser = await _auth.signInWithEmailAndPassword(
-            email: email,
-            password: password,
-          );
-
-          final String uid = existingUser.user!.uid;
-
-          // Optionally update the doc if you want to refresh any data
-          // If the doc doesn't exist, create it; if it does, you can update it:
-          final docRef = _firestore.collection('users').doc(uid);
-          final docSnap = await docRef.get();
-
-          if (!docSnap.exists) {
-            // Create the doc if it doesn't exist
-            await docRef.set(profileData);
-          } else {
-            // Or optionally update some fields if you want
-            // await docRef.update(profileData);
-          }
-
-          // Navigate to HomeScreen
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => HomeScreen(email: email),
-            ),
-          );
-
+      // Determine major
+      String major;
+      if (_selectedMajor == 'Major Not Listed') {
+        if (_customMajorController.text.trim().isEmpty) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Welcome back, $email!')),
+            const SnackBar(content: Text('Please enter your major')),
           );
-
-        } catch (signInError) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Sign-in failed: $signInError')),
-          );
+          return;
+        } else {
+          major = _customMajorController.text.trim();
         }
       } else {
-        // Handle other FirebaseAuth exceptions
+        major = _selectedMajor ?? 'Undeclared';
+      }
+
+      // Build profile data map
+      final profileData = {
+        'name': _nameController.text.trim(),
+        'email': widget.email,
+        'major': major,
+        'pronouns': _selectedPronoun,
+        'interests': _selectedInterests.toList(),
+        'bio': _selectedPrompt!.replaceAll('___', _promptAnswerController.text.trim()),
+        'profile_picture': _profileImage?.path ?? '',
+        'created_at': DateTime.now(),
+      };
+
+      final String email = profileData['email'] as String;
+      final String password = 'dummyPassword123!';
+
+      try {
+        // 1) Attempt to sign in the user with email and password
+        UserCredential existingUser = await _auth.signInWithEmailAndPassword(
+          email: email,
+          password: password,
+        );
+
+        final String uid = existingUser.user!.uid;
+
+        // 2) Overwrite the doc with new profile data
+        final docRef = _firestore.collection('users').doc(uid);
+        await docRef.set(profileData); // This will overwrite the existing document with new data
+
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${e.message}')),
+          SnackBar(content: Text('Profile updated successfully for $email!')),
+        );
+
+        // 3) Navigate directly to HomeScreen
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => HomeScreen(email: email),
+          ),
+        );
+
+
+
+      } catch (e) {
+        // Handle errors, including sign-in failure and Firestore errors
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e')),
         );
       }
-    } catch (generalError) {
-      // Any non-FirebaseAuthException
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $generalError')),
-      );
-    }
-  } else if (!_privacyPolicyChecked) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Please agree to the Privacy Policy')),
-    );
-  } else if (!_contactInfoPolicyChecked) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-          content: Text('Please agree to the Disclosure of Student Contact Information')),
-    );
-  }
-}
-
-
-  // Open privacy policy
-  Future<void> _openPrivacyPolicy() async {
-    final Uri url = Uri.parse('https://www.vcu.edu/privacy-statement/');
-    if (!await launchUrl(url)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not open the link')),
-      );
     }
   }
 
-  // Open contact info policy
-  Future<void> _openContactInfoPolicy() async {
-    final Uri url = Uri.parse(
-        'https://registrar.vcu.edu/records/family-educational-rights-and-privacy-act/student-contact-information/');
-    if (!await launchUrl(url)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not open the link')),
-      );
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('RAMily - Create Profile'),
+        title: const Text('RAMily - Edit Profile'),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -370,7 +291,7 @@ void _submitProfile() async {
                       backgroundImage: _profileImage != null
                           ? FileImage(_profileImage!)
                           : const AssetImage('assets/logo.png')
-                              as ImageProvider,
+                      as ImageProvider,
                     ),
                     Positioned(
                       bottom: 0,
@@ -401,28 +322,7 @@ void _submitProfile() async {
                   border: OutlineInputBorder(),
                 ),
                 validator: (value) =>
-                    value == null || value.isEmpty ? 'Enter your name' : null,
-              ),
-              const SizedBox(height: 16.0),
-
-              // Email Field
-              TextFormField(
-                controller: _emailController,
-                decoration: const InputDecoration(
-                  labelText: 'Email',
-                  prefixIcon: Icon(Icons.email),
-                  border: OutlineInputBorder(),
-                ),
-                keyboardType: TextInputType.emailAddress,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Enter your email';
-                  }
-                  if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
-                    return 'Enter a valid email';
-                  }
-                  return null;
-                },
+                value == null || value.isEmpty ? 'Enter your name' : null,
               ),
               const SizedBox(height: 16.0),
 
@@ -439,13 +339,13 @@ void _submitProfile() async {
                   isExpanded: true,
                   items: _allMajors
                       .map((major) => DropdownMenuItem(
-                            value: major,
-                            child: Text(
-                              major,
-                              overflow: TextOverflow.ellipsis,
-                              maxLines: 1,
-                            ),
-                          ))
+                    value: major,
+                    child: Text(
+                      major,
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                    ),
+                  ))
                       .toList(),
                   onChanged: (value) {
                     setState(() {
@@ -456,7 +356,7 @@ void _submitProfile() async {
                     });
                   },
                   validator: (value) =>
-                      value == null ? 'Please select your major' : null,
+                  value == null ? 'Please select your major' : null,
                 ),
               ),
               const SizedBox(height: 16.0),
@@ -487,9 +387,9 @@ void _submitProfile() async {
                 value: _selectedPronoun,
                 items: _pronouns
                     .map((pronoun) => DropdownMenuItem(
-                          value: pronoun,
-                          child: Text(pronoun),
-                        ))
+                  value: pronoun,
+                  child: Text(pronoun),
+                ))
                     .toList(),
                 onChanged: (value) {
                   setState(() {
@@ -550,12 +450,12 @@ void _submitProfile() async {
                         borderRadius: BorderRadius.circular(8.0),
                         boxShadow: isSelected
                             ? [
-                                const BoxShadow(
-                                  color: Colors.black26,
-                                  offset: Offset(0, 4),
-                                  blurRadius: 4.0,
-                                )
-                              ]
+                          const BoxShadow(
+                            color: Colors.black26,
+                            offset: Offset(0, 4),
+                            blurRadius: 4.0,
+                          )
+                        ]
                             : null,
                       ),
                       child: Center(
@@ -565,7 +465,7 @@ void _submitProfile() async {
                           style: TextStyle(
                             color: isSelected ? Colors.white : Colors.black,
                             fontWeight:
-                                isSelected ? FontWeight.bold : FontWeight.normal,
+                            isSelected ? FontWeight.bold : FontWeight.normal,
                           ),
                         ),
                       ),
@@ -582,7 +482,7 @@ void _submitProfile() async {
                 decoration: InputDecoration(
                   labelText: 'Add Custom Interest',
                   hintText:
-                      'Enter your interest (max $_customInterestCharLimit chars)',
+                  'Enter your interest (max $_customInterestCharLimit chars)',
                   prefixIcon: const Icon(Icons.add),
                   border: const OutlineInputBorder(),
                   counterText: '',
@@ -590,46 +490,46 @@ void _submitProfile() async {
                     icon: const Icon(Icons.check),
                     onPressed: _customInterestsCount < _maxCustomInterests
                         ? () {
-                            final customInterest =
-                                _customInterestController.text.trim();
-                            if (customInterest.isNotEmpty) {
-                              if (customInterest.length >
-                                  _customInterestCharLimit) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      'Interest must be less than $_customInterestCharLimit characters',
-                                    ),
-                                  ),
-                                );
-                                return;
-                              }
-                              if (_selectedInterests.contains(customInterest) ||
-                                  _availableInterests
-                                      .contains(customInterest)) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Interest already added'),
-                                  ),
-                                );
-                              } else if (_selectedInterests.length <
-                                  _maxTotalInterests) {
-                                setState(() {
-                                  _selectedInterests.add(customInterest);
-                                  _customInterestsCount++;
-                                  _customInterestController.clear();
-                                });
-                              } else {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      'You can select up to $_maxTotalInterests interests in total',
-                                    ),
-                                  ),
-                                );
-                              }
-                            }
-                          }
+                      final customInterest =
+                      _customInterestController.text.trim();
+                      if (customInterest.isNotEmpty) {
+                        if (customInterest.length >
+                            _customInterestCharLimit) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                'Interest must be less than $_customInterestCharLimit characters',
+                              ),
+                            ),
+                          );
+                          return;
+                        }
+                        if (_selectedInterests.contains(customInterest) ||
+                            _availableInterests
+                                .contains(customInterest)) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Interest already added'),
+                            ),
+                          );
+                        } else if (_selectedInterests.length <
+                            _maxTotalInterests) {
+                          setState(() {
+                            _selectedInterests.add(customInterest);
+                            _customInterestsCount++;
+                            _customInterestController.clear();
+                          });
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                'You can select up to $_maxTotalInterests interests in total',
+                              ),
+                            ),
+                          );
+                        }
+                      }
+                    }
                         : null,
                   ),
                 ),
@@ -647,11 +547,11 @@ void _submitProfile() async {
                 runSpacing: 8.0,
                 children: _selectedInterests.map((interest) {
                   final isCustomInterest =
-                      !_availableInterests.contains(interest);
+                  !_availableInterests.contains(interest);
                   return Chip(
                     label: Text(interest),
                     backgroundColor:
-                        isCustomInterest ? Colors.orangeAccent : null,
+                    isCustomInterest ? Colors.orangeAccent : null,
                     onDeleted: () {
                       setState(() {
                         _selectedInterests.remove(interest);
@@ -691,7 +591,7 @@ void _submitProfile() async {
                   });
                 },
                 validator: (value) =>
-                    value == null ? 'Please select a prompt' : null,
+                value == null ? 'Please select a prompt' : null,
               ),
               const SizedBox(height: 16.0),
               if (_selectedPrompt != null) ...[
@@ -700,7 +600,7 @@ void _submitProfile() async {
                   decoration: InputDecoration(
                     labelText: 'Your Answer',
                     hintText:
-                        _selectedPrompt!.replaceAll('___', '...'),
+                    _selectedPrompt!.replaceAll('___', '...'),
                     border: const OutlineInputBorder(),
                   ),
                   maxLength: 100,
@@ -710,38 +610,6 @@ void _submitProfile() async {
                 ),
                 const SizedBox(height: 16.0),
               ],
-
-              // Privacy
-              CheckboxListTile(
-                value: _privacyPolicyChecked,
-                onChanged: (bool? value) {
-                  setState(() {
-                    _privacyPolicyChecked = value ?? false;
-                  });
-                },
-                title: GestureDetector(
-                  onTap: _openPrivacyPolicy,
-                  child: const Text('I agree to the Privacy Policy'),
-                ),
-                controlAffinity: ListTileControlAffinity.leading,
-              ),
-
-              // Contact Info
-              CheckboxListTile(
-                value: _contactInfoPolicyChecked,
-                onChanged: (bool? value) {
-                  setState(() {
-                    _contactInfoPolicyChecked = value ?? false;
-                  });
-                },
-                title: GestureDetector(
-                  onTap: _openContactInfoPolicy,
-                  child:
-                      const Text('I agree to the Disclosure of Student Contact Information'),
-                ),
-                controlAffinity: ListTileControlAffinity.leading,
-              ),
-              const SizedBox(height: 32.0),
 
               // Submit
               SizedBox(
