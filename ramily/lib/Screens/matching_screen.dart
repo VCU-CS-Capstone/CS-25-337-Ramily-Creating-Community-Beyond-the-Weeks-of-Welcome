@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:math';
 
 class MatchingScreen extends StatefulWidget {
@@ -8,43 +9,143 @@ class MatchingScreen extends StatefulWidget {
   State<MatchingScreen> createState() => _MatchingScreenState();
 }
 
-class _MatchingScreenState extends State<MatchingScreen> {
-  List<Map<String, String>> matchedUsers = [];
+class User {
+  final String id;
+  final String major;
+  final String pronouns;
+  final List<String> interests;
+  final String bio;
 
-  final List<Map<String, String>> allUsers = [
-    {'name': 'DaJuan Hackett', 'major': 'Computer Science', 'pronouns': 'He/Him', 'interests': 'Technology, Sports, Gaming, Music', 'bio': 'What I’m most excited for at VCU is joining the computer science club and learning about artificial intelligence.'},
-    {'name': 'Ethan Lucas', 'major': 'Environmental Studies', 'pronouns': 'He/Him', 'interests': 'Travel, Movies, Music, Literature', 'bio': 'I chose VCU because of the integration with the city and the focus on environmental research.'},
-    {'name': 'Scott Grant', 'major': 'Design', 'pronouns': 'They/Them', 'interests': 'Art, Music, Movies, Fashion', 'bio': 'What I’m most excited for at VCU is collaborating on design projects and using creative software.'},
-    {'name': 'Felix Webb', 'major': 'Psychology', 'pronouns': 'He/Him', 'interests': 'Travel, Photography, Reading, Fitness', 'bio': 'I chose VCU because of the diverse student body and its excellent psychology program.'},
-    {'name': 'Vanessa Page', 'major': 'Electrical Engineering', 'pronouns': 'She/Her', 'interests': 'Coding, Hiking, Music, Photography', 'bio': 'What I’m most excited for at VCU is building and testing circuits as part of my engineering coursework.'},
-    {'name': 'Sophia Davis', 'major': 'Nursing', 'pronouns': 'She/Her', 'interests': 'Fitness, Cooking, Reading, Hiking', 'bio': 'What I’m most excited for at VCU is gaining hands-on experience in the clinical setting.'},
-    {'name': 'Michael Johnson', 'major': 'Finance', 'pronouns': 'He/Him', 'interests': 'Reading, Sports, Travel, Cooking', 'bio': 'I chose VCU because of its strong finance program and the internship opportunities available in Richmond.'},
-    {'name': 'Ava Taylor', 'major': 'Biology', 'pronouns': 'She/Her', 'interests': 'Science, Music, Cooking, Hiking', 'bio': 'I chose VCU because of its cutting-edge research in genetics and the opportunity to work with faculty on lab projects.'},
-    {'name': 'Liam Roberts', 'major': 'History', 'pronouns': 'He/Him', 'interests': 'Reading, Travel, Writing, Photography', 'bio': 'What I’m most excited for at VCU is learning about world history from different cultural perspectives.'},
-    {'name': 'Mia Brown', 'major': 'Computer Engineering', 'pronouns': 'She/Her', 'interests': 'Technology, Gaming, Photography, Music', 'bio': 'What I’m most excited for at VCU is working on projects that blend technology and design.'},
-    {'name': 'Benjamin Green', 'major': 'Political Science', 'pronouns': 'He/Him', 'interests': 'Movies, Reading, Travel, Photography', 'bio': 'I chose VCU because it offers a strong political science program with an emphasis on public policy.'},
-    {'name': 'Lucas White', 'major': 'Mathematical Sciences', 'pronouns': 'He/Him', 'interests': 'Science, Technology, Gaming, Photography', 'bio': 'What I’m most excited for at VCU is solving real-world problems using mathematical modeling.'},
-    {'name': 'Olivia Adams', 'major': 'Art History', 'pronouns': 'She/Her', 'interests': 'Art, Travel, Photography, Fashion', 'bio': 'I chose VCU because of its strong art history program and the opportunity to study abroad.'},
-    {'name': 'William Harris', 'major': 'Chemistry', 'pronouns': 'He/Him', 'interests': 'Science, Fitness, Music, Travel', 'bio': 'I chose VCU because of the chemistry department’s focus on hands-on experiments and research.'},
-    {'name': 'Emma Walker', 'major': 'Dance and Choreography', 'pronouns': 'She/Her', 'interests': 'Dance, Music, Fitness, Photography', 'bio': 'What I’m most excited for at VCU is performing in the spring dance showcase and collaborating with other artists.'},
-    {'name': 'James Lee', 'major': 'Sociology', 'pronouns': 'He/Him', 'interests': 'Reading, Writing, Politics, Music', 'bio': 'What I’m most excited for at VCU is engaging in research projects about social issues and inequalities.'},
-    {'name': 'Zoe Young', 'major': 'Psychology', 'pronouns': 'She/Her', 'interests': 'Travel, Writing, Movies, Art', 'bio': 'I chose VCU because it has a renowned psychology program with plenty of opportunities for internships.'},
-    {'name': 'Ella Scott', 'major': 'Philosophy', 'pronouns': 'She/Her', 'interests': 'Reading, Writing, Philosophy, Music', 'bio': 'What I’m most excited for at VCU is exploring existentialism and applying philosophical concepts to everyday life.'},
-    {'name': 'Jackson King', 'major': 'Mechanical Engineering', 'pronouns': 'He/Him', 'interests': 'Technology, Sports, Movies, Music', 'bio': 'What I’m most excited for at VCU is designing prototypes for engineering solutions and applying them to real-world problems.'},
-    {'name': 'Aiden Carter', 'major': 'Finance', 'pronouns': 'He/Him', 'interests': 'Music, Reading, Gaming, Fitness', 'bio': 'I chose VCU because of its practical approach to finance education and career readiness.'},
-    {'name': 'Sophia Hall', 'major': 'Marketing', 'pronouns': 'She/Her', 'interests': 'Fashion, Photography, Writing, Music', 'bio': 'What I’m most excited for at VCU is learning the latest marketing strategies and how to apply them in business.'},
-    {'name': 'Mason King', 'major': 'Health Services', 'pronouns': 'He/Him', 'interests': 'Sports, Fitness, Cooking, Hiking', 'bio': 'What I’m most excited for at VCU is gaining real-world experience working in health administration.'},
-    {'name': 'Isabella Baker', 'major': 'Mechanical Engineering', 'pronouns': 'She/Her', 'interests': 'Science, Technology, Hiking, Photography', 'bio': 'I chose VCU because of its comprehensive engineering program and its focus on sustainability.'},
-    {'name': 'Liam Allen', 'major': 'Biomedical Engineering', 'pronouns': 'He/Him', 'interests': 'Technology, Science, Fitness, Hiking', 'bio': 'What I’m most excited for at VCU is developing innovative solutions for the healthcare industry.'},
-    {'name': 'Madison Nelson', 'major': 'Communication Arts', 'pronouns': 'She/Her', 'interests': 'Art, Travel, Photography, Fashion', 'bio': 'What I’m most excited for at VCU is improving my creative skills and building a portfolio for future opportunities.'},
-    {'name': 'Jacob Martinez', 'major': 'Political Science', 'pronouns': 'He/Him', 'interests': 'Reading, Sports, Politics, Movies', 'bio': 'What I’m most excited for at VCU is engaging in discussions about the future of global politics and social change.'},
-    {'name': 'Lily Carter', 'major': 'Art History', 'pronouns': 'She/Her', 'interests': 'Art, Travel, Photography, Literature', 'bio': 'I chose VCU because of its strong focus on contemporary art and global art history.'},
-    {'name': 'Daniel Evans', 'major': 'History', 'pronouns': 'He/Him', 'interests': 'Travel, Literature, Reading, Politics', 'bio': 'What I’m most excited for at VCU is exploring the connections between historical events and contemporary culture.'},
-    // Additional users could be added here...
-  ];
+  User({required this.id, required this.major, required this.pronouns, required this.interests, required this.bio});
+}
+
+double majorMultiplier = .5;
+
+// Fetch users from Firestore
+Future<List<User>> fetchUsersFromFirestore() async {
+  final userCollection = FirebaseFirestore.instance.collection('users');
+  final snapshot = await userCollection.get();
+
+  List<User> users = [];
+  for (var doc in snapshot.docs) {
+    String id = doc.id;
+    String major = doc['major'];
+    String pronouns = doc['pronouns'];
+    List<String> interests = List<String>.from(doc['interests']);
+    String bio = doc['bio'];
+    users.add(User(id: id, major: major, pronouns: pronouns, interests: interests, bio: bio));
+  }
+  return users;
+}
+
+// Define the categories and sub-categories as a nested map
+final Map<String, Map<String, List<String>>> categories = {
+  'Arts and Humanities': {
+    'A&H Majors': [
+      'Arts',
+      'Art History',
+      'Cinema',
+      'Communication Arts',
+      'Craft and Material Studies',
+      'Dance and Choreography',
+      'English',
+      'Foreign Language',
+      'Graphic Design',
+      'Interior Design',
+      'Kinetic Imaging',
+      'Music',
+      'Painting and Printmaking',
+      'Philosophy',
+      'Photography and Film',
+      'Theatre',
+      'Fashion'
+    ]
+  },
+
+  'STEM': {
+    'Social Sciences': [
+      'African American Studies',
+      'Anthropology',
+      'Criminal Justice',
+      'Gender, Sexuality and Women’s Studies',
+      'History',
+      'Human and Organizational Development',
+      'International Studies',
+      'Political Science',
+      'Psychology',
+      'Sociology',
+      'Social Work',
+      'Urban and Regional Studies'
+    ],
+
+    'Natural Sciences': [
+      'Bioinformatics',
+      'Biology',
+      'Chemistry',
+      'Environmental Studies',
+      'Physics',
+      'Science'
+    ],
+
+    'Engineering and Technology': [
+      'Biomedical Engineering',
+      'Chemical and Life Science Engineering',
+      'Computer Engineering',
+      'Computer Science',
+      'Electrical Engineering',
+      'Mechanical Engineering',
+      'Information Systems'
+    ],
+  },
+
+  'Business and Economics': {
+    'B&E Majors':[
+      'Accounting',
+      'Business',
+      'Economics',
+      'Finance',
+      'Financial Technology',
+      'Marketing',
+      'Real Estate',
+      'Supply Chain Management'
+    ]
+  },
+
+  'Health and Medicine': {
+    'H&M Majors': [
+      'Clinical Radiation Sciences',
+      'Dental Hygiene',
+      'Health Services',
+      'Health, Physical Education and Exercise Science',
+      'Medical Laboratory Sciences',
+      'Nursing',
+      'Pharmaceutical Sciences'
+    ]
+  },
+
+  'Other': {
+    'O Majors': [
+      'Interdisciplinary Studies',
+      'Major Not Listed/Undecided'
+    ]
+  }
+
+};
+
+
+class _MatchingScreenState extends State<MatchingScreen> {
+  List<User> matchedUsers = [];
+  bool isLoading = true; // To track the loading state
+
+  // Fetching user's own major and interests from Firestore or any other source
+  // This should be replaced with actual user info in your app, for example:
+  final String referenceMajor = 'Computer Science'; // Example major
+  final List<String> referenceInterests = [
+    'Technology', 'Gaming', 'Sports', 'Music'
+  ]; // Example interests
 
   // New variables for load more functionality
-  List<Map<String, String>> _shuffledUsers = [];
+  List<User> _shuffledUsers = [];
   int _currentIndex = 0;
   final int _batchSize = 5;
 
@@ -54,20 +155,111 @@ class _MatchingScreenState extends State<MatchingScreen> {
     _initializeUserList();
   }
 
-  void _initializeUserList() {
-    final random = Random();
-    _shuffledUsers = List<Map<String, String>>.from(allUsers)..shuffle(random);
-    _currentIndex = 0;
-    matchedUsers = [];
-    _loadMoreUsers();
+  // Helper function to find the category and sub-category of a major
+  List<String>? getMajorCategoryAndSubcategory(String major) {
+    for (var categoryEntry in categories.entries) {
+      for (var subcategoryEntry in categoryEntry.value.entries) {
+        if (subcategoryEntry.value.contains(major)) {
+          return [categoryEntry.key, subcategoryEntry.key];
+        }
+      }
+    }
+    return null; // If major is not found
+  }
+
+// Function to calculate proximity points
+  double calculateProximityPoints(String major1, String major2) {
+    // If both majors are the same
+    if (major1 == major2) {
+      return 3/3;
+    }
+
+    // Get categories and sub-categories of both majors
+    List<String>? major1Details = getMajorCategoryAndSubcategory(major1);
+    List<String>? major2Details = getMajorCategoryAndSubcategory(major2);
+
+    if (major1Details == null || major2Details == null) {
+      return 0/3; // If either major is not found
+    }
+
+    String category1 = major1Details[0];
+    String subcategory1 = major1Details[1];
+    String category2 = major2Details[0];
+    String subcategory2 = major2Details[1];
+
+    // If both majors are in the same subcategory
+    if (category1 == category2 && subcategory1 == subcategory2) {
+      return 2/3;
+    }
+
+    // If both majors are in the same category but different subcategories
+    if (category1 == category2) {
+      return 1/3;
+    }
+
+    // If majors are in different categories
+    return 0/3;
+  }
+
+  double countMatchingInterests(List<String> interests1, List<String> interests2) {
+    double commonInterests = 0;
+    for (String interest in interests1) {
+      if (interests2.contains(interest)) {
+        commonInterests++;
+      }
+    }
+    return commonInterests / (interests1.length);
+  }
+
+  Future<List<User>> calculateScoresForUsers(String referenceMajor, List<String> referenceInterests) async {
+    // Fetch users from Firestore
+    List<User> users = await fetchUsersFromFirestore();
+
+    // List to store users and their scores
+    List<Map<String, dynamic>> userScores = [];
+
+    // Compute scores for each user
+    for (var user in users) {
+      double proximityScore = calculateProximityPoints(referenceMajor, user.major);
+      double interestScore = countMatchingInterests(referenceInterests, user.interests);
+      double totalScore = (proximityScore * majorMultiplier) + (interestScore * (1 - majorMultiplier));
+
+      // Add user and score to the list
+      userScores.add({
+        'user': user,
+        'score': totalScore,
+      });
+    }
+
+    // Sort users by score in descending order
+    userScores.sort((a, b) => b['score'].compareTo(a['score']));
+
+    // Create a sorted list of users based on their scores
+    List<User> sortedUsers = userScores.map((entry) => entry['user'] as User).toList();
+
+    // Return the sorted list of users
+    return sortedUsers;
+  }
+
+  // Initialize the user list by fetching data and sorting by score
+  Future<void> _initializeUserList() async {
+    List<User> sortedUsers = await calculateScoresForUsers(
+        referenceMajor, referenceInterests
+    );
+
+    setState(() {
+      matchedUsers = sortedUsers;
+      isLoading = false; // Set loading state to false when data is fetched
+    });
   }
 
   void _loadMoreUsers() {
-    final int endIndex = (_currentIndex + _batchSize) > _shuffledUsers.length
-        ? _shuffledUsers.length
+    final int endIndex = (_currentIndex + _batchSize) > matchedUsers.length
+        ? matchedUsers.length
         : _currentIndex + _batchSize;
+
     setState(() {
-      matchedUsers.addAll(_shuffledUsers.sublist(_currentIndex, endIndex));
+      _shuffledUsers.addAll(matchedUsers.sublist(_currentIndex, endIndex));
       _currentIndex = endIndex;
     });
   }
@@ -78,7 +270,9 @@ class _MatchingScreenState extends State<MatchingScreen> {
       appBar: AppBar(
         title: const Text('Matching'),
       ),
-      body: SingleChildScrollView(
+      body: isLoading
+          ? Center(child: CircularProgressIndicator()) // Loading state
+          : SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -100,23 +294,23 @@ class _MatchingScreenState extends State<MatchingScreen> {
             ),
             const SizedBox(height: 20),
             Column(
-              children: matchedUsers.map((user) {
+              children: _shuffledUsers.map((user) {
                 return _buildUserCard(
                   context,
-                  name: user['name']!,
-                  major: user['major']!,
-                  pronouns: user['pronouns']!,
-                  interests: user['interests']!,
-                  bio: user['bio']!,
+                  name: user.id, // Use actual user name
+                  major: user.major,
+                  pronouns: user.pronouns, // You can add pronouns to the User model
+                  interests: user.interests.join(', '),
+                  bio: user.bio, // Add bio to User model as well
                 );
               }).toList(),
             ),
             const SizedBox(height: 20),
-            _currentIndex < _shuffledUsers.length
+            _currentIndex < matchedUsers.length
                 ? ElevatedButton(
-                    onPressed: _loadMoreUsers,
-                    child: const Text('Load More'),
-                  )
+              onPressed: _loadMoreUsers,
+              child: const Text('Load More'),
+            )
                 : const Text('No more users'),
           ],
         ),
@@ -125,13 +319,13 @@ class _MatchingScreenState extends State<MatchingScreen> {
   }
 
   Widget _buildUserCard(
-    BuildContext context, {
-    required String name,
-    required String major,
-    required String pronouns,
-    required String interests,
-    required String bio,
-  }) {
+      BuildContext context, {
+        required String name,
+        required String major,
+        required String pronouns,
+        required String interests,
+        required String bio,
+      }) {
     return Card(
       elevation: 1,
       margin: const EdgeInsets.symmetric(vertical: 8.0),
