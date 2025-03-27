@@ -32,9 +32,13 @@ dependencies:
     sdk: flutter
   image_picker: ^0.8.7+4
   url_launcher: ^6.0.20
-  firebase_core: ^3.10.1
+  firebase_core: ^3.12.1
   firebase_auth: ^5.4.1
   cloud_firestore: ^5.6.2
+  image_cropper: ^5.0.0
+  percent_indicator: ^4.2.3
+  qr_flutter: ^4.1.0
+  smooth_page_indicator: ^1.0.0
 
 
   # The following adds the Cupertino Icons font to your application.
@@ -52,6 +56,7 @@ dev_dependencies:
   # rules and activating additional ones.
   flutter_lints: ^4.0.0
 
+
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 
@@ -67,6 +72,17 @@ flutter:
     - assets/Paint_Ramily.png
     - assets/Ramily_Titleblack.png
     - assets/compass.png
+    - assets/traditions/cabell_library.jpg
+    - assets/traditions/ram_horns.jpg
+    - assets/traditions/shafer_court.jpg
+    - assets/traditions/siegel_center.jpg
+    - assets/traditions/cary_street_gym.jpg
+    - assets/traditions/spring_fest.jpg
+    - assets/traditions/rodney.jpg
+    - assets/traditions/snead_hall.jpg
+    - assets/traditions/compass.jpg
+    - assets/traditions/monroe_park.jpg
+
 
 
   # To add assets to your application, add an assets section, like this:

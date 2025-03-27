@@ -1,452 +1,728 @@
 import 'dart:io';
-
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'login_screen.dart';
 import 'matching_screen.dart';
 import 'profile_editor.dart';
+import 'package:ramily/Screens/constants.dart' as constants;
+import 'package:ramily/Screens/traditions_screen.dart';
+import 'matching_onboarding_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final String email;
-
   const HomeScreen({Key? key, required this.email}) : super(key: key);
 
   @override
   _HomeScreenState createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin {
   late Map<String, dynamic> _currentUser;
   bool _isLoading = true;
-
-  final List<Widget> _pages = [];
-  int _selectedIndex = 0;
+  
+  late AnimationController _animController;
+  late Animation<double> _fadeAnim;
+  late Animation<Offset> _slideAnim;
 
   @override
   void initState() {
     super.initState();
+    _initAnimations();
     _fetchUserData();
   }
 
+  void _initAnimations() {
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+    _fadeAnim = CurvedAnimation(
+      parent: _animController,
+      curve: Curves.easeInOut,
+    );
+    _slideAnim = Tween<Offset>(
+      begin: const Offset(0, 0.08),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _animController,
+      curve: Curves.easeOut,
+    ));
+  }
+
   Future<void> _fetchUserData() async {
-    try {
-      final userQuery = await FirebaseFirestore.instance
-          .collection('users')
-          .where('email', isEqualTo: widget.email)
-          .get();
+    setState(() => _isLoading = true);
+    final authUser = FirebaseAuth.instance.currentUser;
 
-      if (userQuery.docs.isNotEmpty) {
-        setState(() {
-          _currentUser = userQuery.docs.first.data();
-          _pages.addAll([
-            _buildHomeContent(),
-            _buildMessagesContent(),
-            _buildProfileContent(),
-          ]);
-          _isLoading = false;
-        });
-      } else {
-        throw Exception('User not found');
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: ${e.toString()}')),
-      );
-    }
-  }
-
-  void _onBottomNavItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-  }
-
-  Future<void> _logOut() async {
-    try {
-      await FirebaseAuth.instance.signOut();
+    if (authUser == null) {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const LoginScreen()),
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
       );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error logging out: ${e.toString()}')),
-      );
+      return;
     }
+
+    try {
+      // Fetch user data from Firestore
+      final docSnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(authUser.uid)
+          .get();
+
+      if (docSnapshot.exists) {
+        _currentUser = docSnapshot.data() as Map<String, dynamic>;
+      } else {
+        // If no document exists, use basic info from Auth
+        _currentUser = {
+          'profile_picture': '',
+          'firstName': authUser.displayName?.split(' ').first ?? 'Guest',
+          'lastName': (authUser.displayName?.split(' ').length ?? 0) > 1 
+              ? authUser.displayName?.split(' ').last 
+              : 'User',
+          'name': authUser.displayName ?? 'Guest User',
+          'email': authUser.email ?? 'unknown@example.com',
+          'major': 'Undeclared',
+          'pronouns': 'Not specified',
+          'interests': <String>[],
+          'bio': 'No bio yet',
+        };
+      }
+    } catch (e) {
+      print('Error fetching user data: $e');
+      // Fallback to basic info if Firestore fetch fails
+      _currentUser = {
+        'profile_picture': '',
+        'firstName': authUser.displayName?.split(' ').first ?? 'Guest',
+        'lastName': (authUser.displayName?.split(' ').length ?? 0) > 1 
+            ? authUser.displayName?.split(' ').last 
+            : 'User',
+        'name': authUser.displayName ?? 'Guest User',
+        'email': authUser.email ?? 'unknown@example.com',
+        'major': 'Undeclared',
+        'pronouns': 'Not specified',
+        'interests': <String>[],
+        'bio': 'No bio yet',
+      };
+    }
+
+    setState(() {
+      _isLoading = false;
+      _animController.forward();
+    });
   }
 
   void _openEditor() {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => ProfileEditorScreen(email: widget.email,), // Navigate to the ProfileEditor screen
+        builder: (_) => ProfileEditorScreen(email: widget.email),
       ),
+    ).then((_) {
+      // Refresh data when returning from profile editor
+      _fetchUserData();
+    });
+  }
+
+  String _capitalizeFirstLetter(String text) {
+    if (text.isEmpty) return text;
+    return text[0].toUpperCase() + text.substring(1);
+  }
+
+  void _showSignOutDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          title: const Text(
+            'Sign Out',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: constants.kVCUBlack,
+            ),
+          ),
+          content: const Text(
+            'Are you sure you want to sign out?',
+            style: TextStyle(color: constants.kVCUBlack),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(
+                'Cancel',
+                style: TextStyle(
+                  color: constants.kDarkText,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _logOut();
+              },
+              child: const Text(
+                'Sign Out',
+                style: TextStyle(
+                  color: constants.kVCURed,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
+  }
+
+  Future<void> _logOut() async {
+    await FirebaseAuth.instance.signOut();
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
+    );
+  }
+
+  // Check if the user has completed the matching onboarding
+  Future<void> _openMatchingScreen() async {
+    // Get current user
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+    
+    try {
+      // Check if this user has completed onboarding in Firestore
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+      
+      // Check if document exists and has the onboarding flag
+      final bool onboardingCompleted = userDoc.exists && 
+          userDoc.data()?.containsKey('matchingOnboardingCompleted') == true &&
+          userDoc.data()?['matchingOnboardingCompleted'] == true;
+      
+      if (onboardingCompleted) {
+        // If onboarding is completed, go directly to matching screen
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const MatchingScreen()),
+        );
+      } else {
+        // If first time, show onboarding
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const MatchingOnboardingScreen()),
+        );
+      }
+    } catch (e) {
+      print('Error checking onboarding status: $e');
+      // If there's an error, default to showing the matching screen
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const MatchingScreen()),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+    return Scaffold(
+      backgroundColor: constants.kVCUWhite,
+      body: SafeArea(
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator(color: constants.kVCUGold))
+            : AnimatedBuilder(
+                animation: _animController,
+                builder: (context, child) {
+                  return FadeTransition(
+                    opacity: _fadeAnim,
+                    child: SlideTransition(
+                      position: _slideAnim,
+                      child: Column(
+                        children: [
+                          _buildProfileHeader(),
+                          Expanded(
+                            child: SingleChildScrollView(
+                              padding: const EdgeInsets.all(16),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  _buildStatCards(),
+                                  const SizedBox(height: 24),
+                                  _buildActionRequired(),
+                                  const SizedBox(height: 24),
+                                  _buildCampusEventsSection(),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+      ),
+    );
+  }
+
+  Widget _buildProfileHeader() {
+    // Use firstName from Firestore or fallback
+    String displayName = _currentUser['firstName'] ?? 
+                         (_currentUser['name']?.split(' ').first ?? 'Guest');
+                         
+    // Capitalize first letter if not already capitalized
+    displayName = _capitalizeFirstLetter(displayName);
+
+    // Format the major display
+    String majorDisplay = _currentUser['major'] ?? 'Undeclared';
+    // If major is too long or contains "Not Listed", simplify it
+    if (majorDisplay.contains('Not Listed') || majorDisplay.contains('Undecided')) {
+      majorDisplay = 'Undeclared';
     }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'RAMily',
-          style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold),
-        ),
-        backgroundColor: Colors.white,
-        elevation: 0,
-        centerTitle: true,
-        iconTheme: const IconThemeData(color: Colors.black87),
-      ),
-      drawer: _buildDrawer(),
-      body: _pages[_selectedIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: _onBottomNavItemTapped,
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: Colors.black87,
-        unselectedItemColor: Colors.grey,
-        backgroundColor: Colors.white,
-        elevation: 0,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.chat_bubble_outline),
-            label: 'Messages',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            label: 'Profile',
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHomeContent() {
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _buildUserInfoSection(),
-          _buildQuickAccessButtons(),
-          _buildNewsFeedSection(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMessagesContent() {
-    return const Center(
-      child: Text(
-        'Messages',
-        style: TextStyle(fontSize: 18, color: Colors.black87),
-      ),
-    );
-  }
-
-  Widget _buildProfileContent() {
-    return FutureBuilder<DocumentSnapshot>(
-      future: FirebaseFirestore.instance
-          .collection('users')
-          .doc(FirebaseAuth.instance.currentUser!.uid)
-          .get(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        if (snapshot.hasError) {
-          return const Center(child: Text('Error loading profile information.'));
-        }
-        if (!snapshot.hasData || !snapshot.data!.exists) {
-          return const Center(child: Text('No profile data found.'));
-        }
-
-        final userData = snapshot.data!.data() as Map<String, dynamic>;
-        return SingleChildScrollView(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: CircleAvatar(
-                  radius: 60,
-                  backgroundImage: userData['profile_picture'] != ''
-                      ? FileImage(File(userData['profile_picture']))
-                          as ImageProvider
-                      : const AssetImage('assets/logo.png'),
-                ),
-              ),
-              const SizedBox(height: 16.0),
-              Text(
-                'Name: ${userData['name']}',
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8.0),
-              Text(
-                'Email: ${userData['email']}',
-                style: const TextStyle(fontSize: 16),
-              ),
-              const SizedBox(height: 8.0),
-              Text(
-                'Major: ${userData['major']}',
-                style: const TextStyle(fontSize: 16),
-              ),
-              const SizedBox(height: 8.0),
-              Text(
-                'Pronouns: ${userData['pronouns'] ?? 'Not specified'}',
-                style: const TextStyle(fontSize: 16),
-              ),
-              const SizedBox(height: 8.0),
-              Text(
-                'Interests: ${userData['interests'].join(', ')}',
-                style: const TextStyle(fontSize: 16),
-              ),
-              const SizedBox(height: 8.0),
-              Text(
-                'Bio: ${userData['bio']}',
-                style: const TextStyle(fontSize: 16),
-              ),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _openEditor,
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16.0),
-                    textStyle: const TextStyle(fontSize: 18.0),
-                  ),
-                  child: const Text('Edit Profile'),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildUserInfoSection() {
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Row(
         children: [
-          CircleAvatar(
-            radius: 30,
-            backgroundImage: _currentUser['profile_picture'] != null &&
-                    _currentUser['profile_picture'].isNotEmpty
-                ? FileImage(File(_currentUser['profile_picture']))
-                : const AssetImage('assets/logo.png')
-                    as ImageProvider,
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Text(
-              'Welcome, ${_currentUser['name']}',
-              style: const TextStyle(
-                color: Colors.black87,
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
+          // Profile picture
+          Container(
+            height: 70,
+            width: 70,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: constants.kVCUWhite, width: 2),
+              boxShadow: [
+                BoxShadow(
+                  color: constants.kVCUBlack.withOpacity(0.1),
+                  blurRadius: 8,
+                  spreadRadius: 1,
+                ),
+              ],
+              image: DecorationImage(
+                image: _currentUser['profile_picture'] != ''
+                    ? FileImage(File(_currentUser['profile_picture']))
+                    : const AssetImage('assets/logo.png') as ImageProvider,
+                fit: BoxFit.cover,
               ),
             ),
           ),
+          const SizedBox(width: 16),
+          // User info
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  displayName,
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: constants.kVCUBlack,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    const Icon(Icons.school, size: 16, color: constants.kVCUGold),
+                    const SizedBox(width: 4),
+                    Text(
+                      majorDisplay,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: constants.kDarkText,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          // Settings dropdown menu
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.settings_outlined, color: constants.kVCUBlack),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            elevation: 2,
+            offset: const Offset(0, 40),
+            onSelected: (value) {
+              if (value == 'edit_profile') {
+                _openEditor();
+              } else if (value == 'logout') {
+                _showSignOutDialog();
+              }
+            },
+            itemBuilder: (BuildContext context) => [
+              PopupMenuItem<String>(
+                value: 'edit_profile',
+                child: Row(
+                  children: [
+                    const Icon(Icons.edit, color: constants.kVCUBlack, size: 20),
+                    const SizedBox(width: 12),
+                    const Text('Edit Profile'),
+                  ],
+                ),
+              ),
+              const PopupMenuDivider(),
+              PopupMenuItem<String>(
+                value: 'logout',
+                child: Row(
+                  children: [
+                    const Icon(Icons.logout, color: constants.kVCURed, size: 20),
+                    const SizedBox(width: 12),
+                    const Text('Log Out'),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildQuickAccessButtons() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 24.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          _buildQuickButton(
+  Widget _buildStatCards() {
+    return Row(
+      children: [
+        // Traditions Button - using VCU Blue
+        Expanded(
+          child: _buildStatCardButton(
+            title: "Traditions",
+            color: constants.kVCUGold,
             icon: Icons.map_outlined,
-            label: 'Traditions',
             onTap: () {
-              // TODO: Navigate to Traditions screen
-            },
-          ),
-          _buildQuickButton(
-            icon: Icons.people_outline,
-            label: 'Matching',
-            onTap: () {
-              // Navigate to MatchingScreen
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => MatchingScreen(
-                  ),
-                ),
+                MaterialPageRoute(builder: (_) => const TraditionsScreen()),
               );
             },
           ),
-          _buildQuickButton(
-            icon: Icons.school_outlined,
-            label: 'Rambassadors',
-            onTap: () {
-              // TODO: Navigate to Rambassadors screen
-            },
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: _buildStatCardButton(
+            title: "Matching",
+            color: constants.kVCUGold,
+            icon: Icons.people_outline,
+            onTap: _openMatchingScreen, // Use the new method for checking onboarding status
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
-  Widget _buildQuickButton({
+  Widget _buildStatCardButton({
+    required String title,
+    required Color color,
     required IconData icon,
-    required String label,
     required VoidCallback onTap,
   }) {
     return GestureDetector(
       onTap: onTap,
-      child: Column(
-        children: [
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.grey.shade200,
-              shape: BoxShape.circle,
+      child: Container(
+        height: 90,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: color.withOpacity(0.3),
+              blurRadius: 8,
+              spreadRadius: 0,
+              offset: const Offset(0, 3),
             ),
-            padding: const EdgeInsets.all(16),
-            child: Icon(icon, size: 28, color: Colors.black87),
-          ),
-          const SizedBox(height: 8),
-          Text(label, style: const TextStyle(color: Colors.black87)),
-        ],
+          ],
+        ),
+        child: Row(
+          children: [
+            Icon(
+              icon,
+              color: constants.kVCUBlack,
+              size: 20,
+            ),
+            const SizedBox(width: 9),
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(
+                  color: constants.kVCUBlack,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            const Icon(
+              Icons.arrow_forward_ios,
+              color: constants.kVCUBlack,
+              size: 18,
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildNewsFeedSection() {
-    final List<Map<String, String>> newsFeed = [
-      {
-        'title': 'Welcome to VCU!',
-        'content': 'We are excited to have you on campus.',
-      },
-      {
-        'title': 'Upcoming Events',
-        'content': 'Don\'t miss the Welcome Week activities!',
-      },
-    ];
-
-    return ListView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: newsFeed.length,
-      itemBuilder: (context, index) {
-        final newsItem = newsFeed[index];
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-          child: Card(
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-              side: BorderSide(color: Colors.grey.shade300),
-            ),
-            child: ListTile(
-              title: Text(
-                newsItem['title']!,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                ),
+  Widget _buildActionRequired() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              "Action Required",
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: constants.kVCUBlack,
               ),
-              subtitle: Text(
-                newsItem['content']!,
-                style: const TextStyle(color: Colors.black54),
-              ),
-              onTap: () {
-                // Could navigate to a detailed news page
-              },
             ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildDrawer() {
-    return Drawer(
-      child: ListView(
-        padding: EdgeInsets.zero,
-        children: [
-          DrawerHeader(
-            decoration: BoxDecoration(color: Colors.grey.shade200),
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: const BoxDecoration(
+                color: constants.kVCURed,
+                shape: BoxShape.circle,
+              ),
+              child: const Text(
+                "1",
+                style: TextStyle(color: constants.kVCUWhite, fontSize: 12),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Card(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          elevation: 1,
+          color: constants.kVCUWhite,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: Row(
               children: [
-                CircleAvatar(
-                  radius: 30,
-                  backgroundImage: _currentUser['profile_picture'] != null &&
-                          _currentUser['profile_picture'].isNotEmpty
-                      ? FileImage(File(_currentUser['profile_picture']))
-                      : const AssetImage('assets/logo.png')
-                          as ImageProvider,
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: constants.kVCUGreen.withOpacity(0.08),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.check_circle, color: constants.kVCUGreen, size: 20),
                 ),
                 const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        "Verify Student ID",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: constants.kVCUBlack,
+                          fontSize: 16,
+                        ),
+                      ),
+                      Text(
+                        "Required to access all campus features",
+                        style: TextStyle(
+                          color: constants.kDarkText,fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
                 Text(
-                  _currentUser['name'] ?? 'Unknown User',
-                  style: const TextStyle(
-                    fontSize: 20,
-                    color: Colors.black87,
-                    fontWeight: FontWeight.bold,
+                  "1 hr",
+                  style: TextStyle(
+                    color: constants.kDarkText,
+                    fontSize: 12,
                   ),
                 ),
               ],
             ),
           ),
-          _buildDrawerItem(
-            icon: Icons.school_outlined,
-            text: 'Canvas',
-            onTap: () => _launchURL('https://canvas.vcu.edu/'),
-          ),
-          _buildDrawerItem(
-            icon: Icons.navigation_outlined,
-            text: 'Navigate',
-            onTap: () => _launchURL('https://navigate.vcu.edu/'),
-          ),
-          ListTile(
-            leading: const Icon(Icons.exit_to_app, color: Colors.black87),
-            title: const Text(
-              'Log Out',
-              style: TextStyle(color: Colors.black87),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCampusEventsSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              "Campus Events",
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: constants.kVCUBlack,
+              ),
             ),
-            onTap: _logOut,
-          ),
-        ],
+            TextButton(
+              onPressed: () {},
+              child: const Text(
+                "See all",
+                style: TextStyle(color: constants.kVCUBlue),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        _buildEventCard(
+          title: "Welcome Week Kickoff",
+          description: "Join us for food, games, and meet fellow students",
+          date: "March 25",
+          location: "Student Commons",
+          color: constants.kVCUPurple,
+          icon: Icons.celebration,
+        ),
+        const SizedBox(height: 16),
+        _buildEventCard(
+          title: "Ram Spirit Rally",
+          description: "Show your VCU pride and cheer on the Rams!",
+          date: "March 28",
+          location: "Siegel Center",
+          color: constants.kAccentColor,
+          icon: Icons.sports,
+        ),
+        const SizedBox(height: 16),
+        _buildEventCard(
+          title: "Major & Minor Fair",
+          description: "Explore academic programs and career opportunities",
+          date: "April 2",
+          location: "University Student Commons",
+          color: constants.kTraditionsColor,
+          icon: Icons.school,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEventCard({
+    required String title,
+    required String description,
+    required String date,
+    required String location,
+    required Color color,
+    required IconData icon,
+  }) {
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      elevation: 2,
+      color: constants.kVCUWhite,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 50,
+                  height: 50,
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    icon,
+                    color: color,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: constants.kVCUBlack,
+                          fontSize: 16,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        description,
+                        style: TextStyle(
+                          color: constants.kDarkText,
+                          fontSize: 14,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.calendar_today, size: 14, color: color),
+                    const SizedBox(width: 4),
+                    Text(
+                      date,
+                      style: TextStyle(
+                        color: constants.kDarkText,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(width: 16),
+                Row(
+                  children: [
+                    Icon(Icons.location_on_outlined, size: 14, color: color),
+                    const SizedBox(width: 4),
+                    Text(
+                      location,
+                      style: TextStyle(
+                        color: constants.kDarkText,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+                const Spacer(),
+                TextButton(
+                  onPressed: () {},
+                  style: TextButton.styleFrom(
+                    backgroundColor: constants.kVCUGold,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  child: const Text(
+                    "Join",
+                    style: TextStyle(
+                      color: constants.kVCUBlack,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
-
-  Widget _buildDrawerItem({
-    required IconData icon,
-    required String text,
-    required VoidCallback onTap,
-  }) {
-    return ListTile(
-      leading: Icon(icon, color: Colors.black87),
-      title: Text(text, style: const TextStyle(color: Colors.black87)),
-      onTap: onTap,
-    );
-  }
-
-  void _launchURL(String url) async {
-    final Uri uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not open $url')),
-      );
-    }
+  
+  @override
+  void dispose() {
+    _animController.dispose();
+    super.dispose();
   }
 }

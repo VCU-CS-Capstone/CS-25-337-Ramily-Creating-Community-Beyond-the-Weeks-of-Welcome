@@ -1,8 +1,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'home_screen.dart';
+import 'package:ramily/Screens/main_navigator.dart';
 import 'profile_creation_screen.dart';
+import 'constants.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -18,60 +19,50 @@ class _LoginScreenState extends State<LoginScreen> {
   final String _dummyPassword = 'dummyPassword123!';
 
   void _handleLogin() async {
-    if (_formKey.currentState!.validate()) {
-      String email = _emailController.text.trim();
-      String password = _dummyPassword;
+  if (_formKey.currentState!.validate()) {
+    final String email = _emailController.text.trim();
+    final String password = _dummyPassword; // or the real password
 
-      try {
-        // Sign in with Auth
-        UserCredential userCredential = await FirebaseAuth.instance
-            .signInWithEmailAndPassword(email: email, password: password);
+    try {
+      // 1) Sign in with Firebase Auth
+      final userCredential = await FirebaseAuth.instance
+          .signInWithEmailAndPassword(email: email, password: password);
 
-        final user = userCredential.user;
-        if (user != null) {
-          // Check if Firestore doc exists; if not, create minimal doc
-          DocumentSnapshot userDoc = await FirebaseFirestore.instance
-              .collection('users')
-              .doc(user.uid)
-              .get();
+      final user = userCredential.user;
+      if (user != null) {
+        // 2) If sign-in succeeds, go straight to HomeScreen
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => MainNavigator(email: email)),
+        );
 
-          if (!userDoc.exists) {
-            await FirebaseFirestore.instance
-                .collection('users')
-                .doc(user.uid)
-                .set({
-              'email': email,
-              'createdAt': DateTime.now(),
-            });
-          }
-
-          // Navigate to HomeScreen, pass the email
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => HomeScreen(email: email),
-            ),
-          );
-
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Welcome, $email!')),
-          );
-        }
-      } on FirebaseAuthException catch (e) {
-        String message;
-        if (e.code == 'user-not-found') {
-          message = 'No user found for that email.';
-        } else if (e.code == 'wrong-password') {
-          message = 'Incorrect password.';
-        } else {
-          message = 'Login failed. Please try again.';
-        }
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(message)),
+          SnackBar(content: Text('Welcome, $email!')),
         );
       }
+    } on FirebaseAuthException catch (e) {
+      // Handle Auth-specific errors
+      String message;
+      if (e.code == 'user-not-found') {
+        message = 'No user found for that email.';
+      } else if (e.code == 'wrong-password') {
+        message = 'Incorrect password.';
+      } else {
+        message = 'Login failed. Please try again.';
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+    } catch (e) {
+      // Catch any other errors (unlikely if we're not calling Firestore)
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e')),
+      );
     }
   }
+}
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -111,6 +102,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     controller: _emailController,
                     decoration: InputDecoration(
                       labelText: 'Email',
+                      labelStyle: TextStyle(color:kPrimaryColor),
                       prefixIcon: const Icon(Icons.email),
                       border: const OutlineInputBorder(),
                       filled: true,
@@ -132,7 +124,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     onPressed: _handleLogin,
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16.0),
-                      backgroundColor: const Color.fromARGB(255, 240, 240, 243),
+                      backgroundColor: const Color.fromARGB(255, 137, 200, 192),
                       textStyle: const TextStyle(fontSize: 18.0),
                     ),
                     child: const Text('Login'),
