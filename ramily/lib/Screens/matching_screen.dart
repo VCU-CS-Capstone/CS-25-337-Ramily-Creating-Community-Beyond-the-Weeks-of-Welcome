@@ -3,14 +3,21 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:math';
 import 'matching_onboarding_screen.dart';
+import 'chat_detail_screen.dart';
+import 'constants.dart' as constants;
+import 'package:firebase_auth/firebase_auth.dart' as auth;
 
-// Color constants defined locally to avoid import conflicts
-const Color _kPrimaryColor = Color(0xFF8D5E8B);    // Lighter Purple
-const Color _kAccentColor = Color(0xFFF37D7F);     // Softer Red
-const Color _kSecondaryColor = Color(0xFFFCD16F);  // Lighter Gold
-const Color _kTraditionsColor = Color.fromARGB(255, 137, 200, 192); // Turquoise
-const Color _kBackgroundColor = Color(0xFFF8F8F8); // Almost White
-const Color _kDarkText = Color(0xFF333333);        // Softer Black
+// Use the color constants for consistency
+const Color kPrimaryColor = constants.kPrimaryColor;
+const Color kVCUBlack = constants.kVCUBlack;
+const Color kVCUGold = constants.kVCUGold;
+const Color kVCUWhite = constants.kVCUWhite;
+const Color kVCUPurple = constants.kVCUPurple;
+const Color kVCUBlue = constants.kVCUBlue;
+const Color kVCUGreen = constants.kVCUGreen;
+const Color kVCURed = constants.kVCURed;
+const Color kDarkText = constants.kDarkText;
+const Color kBackgroundColor = constants.kBackgroundColor;
 
 class MatchingScreen extends StatefulWidget {
   const MatchingScreen({Key? key}) : super(key: key);
@@ -19,14 +26,17 @@ class MatchingScreen extends StatefulWidget {
   State<MatchingScreen> createState() => _MatchingScreenState();
 }
 
+// User class with improved avatar handling
 class User {
   final String id;
-  final String name; // Non-nullable but will use id as fallback
+  final String name;
   final String major;
   final String pronouns;
   final List<String> interests;
   final String bio;
   final String profilePicture;
+  final Color avatarColor;
+  final String gender;  // Added gender field
 
   User({
     required this.id, 
@@ -34,116 +44,40 @@ class User {
     required this.pronouns, 
     required this.interests, 
     required this.bio,
-    String? name, // Accept nullable name
+    String? name,
     this.profilePicture = '',
-  }) : name = name ?? id; // Use id as fallback if name is null
+    this.gender = '',  // Default value for gender
+  }) : 
+    name = (name != null && name.isNotEmpty) ? name : id,
+    avatarColor = _generateAvatarColor((name != null && name.isNotEmpty) ? name : id);
+  
+  // Generate consistent color based on user name or ID
+  static Color _generateAvatarColor(String seed) {
+    // Use consistent hash code to ensure same color for same user
+    final random = Random(seed.hashCode);
+    
+    // VCU brand color palette
+    final List<Color> vcuColorPalette = [
+      kVCUPurple,
+      kVCUBlue,
+      Color(0xFF8D5E8B), // Lavender from matching colors
+      kVCUBlue.withOpacity(0.85),
+      kVCUPurple.withOpacity(0.85),
+      Color(0xFF614A76), // Deep purple (VCU adjacent)
+      Color(0xFF007DB5), // Medium blue
+    ];
+    
+    return vcuColorPalette[random.nextInt(vcuColorPalette.length)];
+  }
+  
+  // First letter getter for avatar display
+  String get firstLetter => name.isNotEmpty ? name[0].toUpperCase() : '';
 }
 
-// Global variable for major multiplier
+// Global major weight variable (slider value)
 double majorMultiplier = 0.5;
 
-// Fetch users from Firestore
-Future<List<User>> fetchUsersFromFirestore() async {
-  try {
-    final userCollection = FirebaseFirestore.instance.collection('users');
-    final snapshot = await userCollection.get();
-
-    List<User> users = [];
-    for (var doc in snapshot.docs) {
-      String id = doc.id;
-      
-      // Get user data with proper fallbacks for null values
-      Map<String, dynamic> data = doc.data();
-      
-      // Handle name fields carefully with null checks
-      String? userName;
-      if (data.containsKey('name') && data['name'] != null) {
-        userName = data['name'];
-      } else if (data.containsKey('firstName') && data['firstName'] != null) {
-        userName = data['firstName'];
-        // Add last name if available
-        if (data.containsKey('lastName') && data['lastName'] != null) {
-userName = "$userName ${data['lastName']}";        }
-      }
-      // No need to set a fallback here, we'll use id in the User constructor
-      
-      String major = data.containsKey('major') ? data['major'] ?? '' : '';
-      String pronouns = data.containsKey('pronouns') ? data['pronouns'] ?? '' : '';
-      
-      // Safely handle interests list
-      List<String> interests = [];
-      if (data.containsKey('interests') && data['interests'] != null) {
-        interests = List<String>.from(data['interests']);
-      }
-      
-      String bio = data.containsKey('bio') ? data['bio'] ?? '' : '';
-      String profilePicture = data.containsKey('profile_picture') ? data['profile_picture'] ?? '' : '';
-      
-      users.add(User(
-        id: id, 
-        name: userName, // This might be null, but the User constructor will handle it
-        major: major, 
-        pronouns: pronouns, 
-        interests: interests, 
-        bio: bio,
-        profilePicture: profilePicture,
-      ));
-    }
-    return users;
-  } catch (e) {
-    print('Error fetching users: $e');
-    // Return sample data if Firestore fails
-    return [
-      User(
-        id: 'johnsmith',
-        name: 'John Smith',
-        major: 'Computer Science',
-        pronouns: 'He/Him',
-        interests: ['Technology', 'Gaming', 'Music'],
-        bio: 'A passionate computer science student who loves coding and gaming.',
-        profilePicture: '',
-      ),
-      User(
-        id: 'emilywilson',
-        name: 'Emily Wilson',
-        major: 'Psychology',
-        pronouns: 'She/Her',
-        interests: ['Reading', 'Music', 'Photography', 'Psychology'],
-        bio: 'Psychology student interested in cognitive science and music therapy.',
-        profilePicture: '',
-      ),
-      User(
-        id: 'michaeljones',
-        name: 'Michael Jones',
-        major: 'Business',
-        pronouns: 'He/Him',
-        interests: ['Finance', 'Sports', 'Travel'],
-        bio: 'Business student with a passion for finance and investments.',
-        profilePicture: '',
-      ),
-      User(
-        id: 'sophiadavis',
-        name: 'Sophia Davis',
-        major: 'Biology',
-        pronouns: 'She/Her',
-        interests: ['Science', 'Reading', 'Hiking', 'Technology'],
-        bio: 'Future doctor studying Biology with a focus on genetics research.',
-        profilePicture: '',
-      ),
-      User(
-        id: 'jameswilliams',
-        name: 'James Williams',
-        major: 'Art History',
-        pronouns: 'They/Them',
-        interests: ['Art', 'Museums', 'Photography', 'Travel'],
-        bio: 'Art history enthusiast exploring the intersections of modern and classical art.',
-        profilePicture: '',
-      ),
-    ];
-  }
-}
-
-// Define the categories and sub-categories as a nested map
+// Define the categories and sub-categories for major matching
 final Map<String, Map<String, List<String>>> categories = {
   'Arts and Humanities': {
     'A&H Majors': [
@@ -238,44 +172,108 @@ final Map<String, Map<String, List<String>>> categories = {
 
 class _MatchingScreenState extends State<MatchingScreen> with SingleTickerProviderStateMixin {
   List<User> matchedUsers = [];
-  bool isLoading = true; // To track the loading state
+  bool isLoading = true;
   
-  // Use late for controllers
+  // Controllers
   late AnimationController _animationController;
   final ScrollController _scrollController = ScrollController();
 
-  // Fetching user's own major and interests from Firestore or any other source
-  // This should be replaced with actual user info in your app
-  final String referenceMajor = 'Computer Science'; // Example major
-  final List<String> referenceInterests = [
-    'Technology', 'Gaming', 'Sports', 'Music'
-  ]; // Example interests
-
-  // Variables for load more functionality
+  // Current user info for matching
+  late String referenceMajor = 'Computer Science'; // Default
+  late List<String> referenceInterests = ['Technology', 'Gaming', 'Sports', 'Music']; // Default
+  
+  // Pagination variables
   List<User> _displayedUsers = [];
   int _currentIndex = 0;
   final int _batchSize = 5;
   
-  // Cache to store calculated scores
+  // Cache for match scores
   final Map<String, double> _scoreCache = {};
   
-  // Filter value for adjusting major vs interests weight
-  double _filterValue = 0.5; // Default weight
+  // Filter value
+  double _filterValue = 0.5;
+  
+  // Filter state variables
+  bool _showFilterModal = false;
+  String? _selectedGenderFilter;
+  String? _selectedMajorFilter;
+  List<String> _allMajors = []; // Will be populated from categories
+  
+  // Gender options
+ final List<String> _genderOptions = [
+  'All',
+  'He/Him',
+  'She/Her',
+  'They/Them',
+  'He/They',
+  'She/They',
+  'All Pronouns'
+];
 
   @override
   void initState() {
     super.initState();
-    // Initialize the animation controller with correct vsync
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
     
-    // Add scroll listener
     _scrollController.addListener(_scrollListener);
+    _initializeFilterOptions();
+    _loadCurrentUserInfo();
+  }
+  
+  void _initializeFilterOptions() {
+    // Extract all majors from categories
+    Set<String> majors = {};
+    for (var categoryEntry in categories.entries) {
+      for (var subcategoryEntry in categoryEntry.value.entries) {
+        majors.addAll(subcategoryEntry.value);
+      }
+    }
     
-    // Initialize user list
-    _initializeUserList();
+    _allMajors = ['All Majors', ...majors.toList()..sort()];
+  }
+
+  // Load current user data 
+  Future<void> _loadCurrentUserInfo() async {
+    try {
+      final currentUser = auth.FirebaseAuth.instance.currentUser;
+      if (currentUser != null) {
+        final doc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(currentUser.uid)
+            .get();
+            
+        if (doc.exists) {
+          final data = doc.data() as Map<String, dynamic>;
+          
+          // Get major with fallback
+          String userMajor = 'Computer Science';
+          if (data.containsKey('major') && data['major'] != null && data['major'].toString().isNotEmpty) {
+            userMajor = data['major'].toString();
+          }
+          
+          // Get interests with fallback
+          List<String> userInterests = ['Technology', 'Gaming', 'Sports', 'Music'];
+          if (data.containsKey('interests') && data['interests'] != null && data['interests'] is List) {
+            userInterests = List<String>.from(
+                data['interests'].map((i) => i.toString())
+            );
+          }
+          
+          setState(() {
+            referenceMajor = userMajor;
+            referenceInterests = userInterests;
+          });
+        }
+      }
+    } catch (e) {
+      print('Error loading current user data: $e');
+      // Continue with defaults
+    } finally {
+      _initializeUserList();
+    }
   }
 
   @override
@@ -286,7 +284,69 @@ class _MatchingScreenState extends State<MatchingScreen> with SingleTickerProvid
     super.dispose();
   }
 
-  // Show the onboarding screen when the info button is tapped
+  // Uniform avatar builder 
+  Widget buildUserAvatar(User user, {double size = 50, bool showBorder = true}) {
+    // Try to use actual profile picture if available
+    if (user.profilePicture.isNotEmpty) {
+      try {
+        final File profileFile = File(user.profilePicture);
+        if (profileFile.existsSync()) {
+          return Container(
+            width: size,
+            height: size,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: showBorder ? Border.all(color: Colors.white, width: 2) : null,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+              image: DecorationImage(
+                image: FileImage(profileFile),
+                fit: BoxFit.cover,
+              ),
+            ),
+          );
+        }
+      } catch (e) {
+        print('Error loading profile image: $e');
+        // Fall through to default avatar
+      }
+    }
+    
+    // Fallback to letter-based avatar
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: user.avatarColor,
+        border: showBorder ? Border.all(color: Colors.white, width: 2) : null,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Center(
+        child: Text(
+          user.firstLetter,
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: size * 0.4, // Scale font with avatar size
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Show the onboarding screen when info button is tapped
   void _showOnboardingScreen() {
     Navigator.push(
       context,
@@ -294,13 +354,14 @@ class _MatchingScreenState extends State<MatchingScreen> with SingleTickerProvid
     );
   }
 
+  // Load more users when scrolling to bottom
   void _scrollListener() {
     if (_scrollController.position.pixels == _scrollController.position.maxScrollExtent) {
       _loadMoreUsers();
     }
   }
 
-  // Helper function to find the category and sub-category of a major
+  // Helper function to find major categories
   List<String>? getMajorCategoryAndSubcategory(String major) {
     for (var categoryEntry in categories.entries) {
       for (var subcategoryEntry in categoryEntry.value.entries) {
@@ -309,22 +370,22 @@ class _MatchingScreenState extends State<MatchingScreen> with SingleTickerProvid
         }
       }
     }
-    return null; // If major is not found
+    return null;
   }
 
-  // Function to calculate proximity points
+  // Calculate major proximity score (0 to 1)
   double calculateProximityPoints(String major1, String major2) {
-    // If both majors are the same
+    // Same major = perfect match
     if (major1 == major2) {
-      return 3/3;
+      return 1.0;
     }
 
-    // Get categories and sub-categories of both majors
+    // Get categories for both majors
     List<String>? major1Details = getMajorCategoryAndSubcategory(major1);
     List<String>? major2Details = getMajorCategoryAndSubcategory(major2);
 
     if (major1Details == null || major2Details == null) {
-      return 0/3; // If either major is not found
+      return 0.0;
     }
 
     String category1 = major1Details[0];
@@ -332,29 +393,28 @@ class _MatchingScreenState extends State<MatchingScreen> with SingleTickerProvid
     String category2 = major2Details[0];
     String subcategory2 = major2Details[1];
 
-    // If both majors are in the same subcategory
+    // Same subcategory = high match
     if (category1 == category2 && subcategory1 == subcategory2) {
-      return 2/3;
+      return 0.67; // 2/3
     }
 
-    // If both majors are in the same category but different subcategories
+    // Same category = medium match
     if (category1 == category2) {
-      return 1/3;
+      return 0.33; // 1/3
     }
 
-    // If majors are in different categories
-    return 0/3;
+    // Different categories = no match
+    return 0.0;
   }
 
-  // Optimized matching calculation function
-  double calculateOptimizedScore(User user1, User user2) {
-    // --- Major proximity calculation (Academic match) ---
+  // Calculate match score between two users
+  double calculateMatchScore(User user1, User user2) {
+    // Major proximity (academic match)
     double majorProximity = calculateProximityPoints(user1.major, user2.major);
     
-    // --- Interest overlap calculation (Social match) ---
+    // Interest overlap (social match)
     double interestOverlap = 0.0;
     if (user1.interests.isNotEmpty && user2.interests.isNotEmpty) {
-      // Count matching interests
       int matchCount = 0;
       for (String interest in user1.interests) {
         if (user2.interests.contains(interest)) {
@@ -362,27 +422,22 @@ class _MatchingScreenState extends State<MatchingScreen> with SingleTickerProvid
         }
       }
       
-      // Calculate the overlap ratio - divided by the smaller list's size for better accuracy
       int smallerSize = min(user1.interests.length, user2.interests.length);
       if (smallerSize > 0) {
         interestOverlap = matchCount / smallerSize;
         
-        // Apply a bonus for having multiple interests in common
-        // This creates a non-linear curve where more matches are better
+        // Bonus for multiple shared interests
         if (matchCount > 1) {
           interestOverlap = interestOverlap * (1.0 + (0.1 * (matchCount - 1)));
         }
         
-        // Cap at 1.0 maximum
         interestOverlap = min(interestOverlap, 1.0);
       }
     }
     
-    // --- Bio keywords analysis ---
-    // Find complementary keywords in bios for more nuanced matching
+    // Bio keyword compatibility
     double bioCompatibility = 0.0;
     if (user1.bio.isNotEmpty && user2.bio.isNotEmpty) {
-      // Simple implementation - check for keyword overlap
       List<String> keywords = [
         'study', 'learning', 'friends', 'social', 'activities', 
         'sports', 'music', 'art', 'science', 'engineering', 
@@ -393,7 +448,6 @@ class _MatchingScreenState extends State<MatchingScreen> with SingleTickerProvid
       Set<String> user1Keywords = {};
       Set<String> user2Keywords = {};
       
-      // Extract keywords from bios
       for (String keyword in keywords) {
         if (user1.bio.toLowerCase().contains(keyword)) {
           user1Keywords.add(keyword);
@@ -403,36 +457,29 @@ class _MatchingScreenState extends State<MatchingScreen> with SingleTickerProvid
         }
       }
       
-      // Calculate overlap
       if (user1Keywords.isNotEmpty && user2Keywords.isNotEmpty) {
         Set<String> commonKeywords = user1Keywords.intersection(user2Keywords);
         int minSize = min(user1Keywords.length, user2Keywords.length);
         if (minSize > 0) {
           bioCompatibility = commonKeywords.length / minSize.toDouble();
-          
-          // Cap at 0.5 to avoid over-weighting this factor
           bioCompatibility = min(bioCompatibility, 0.5);
         }
       }
     }
     
-    // --- Pronouns compatibility ---
-    // Optional: add a small bonus for compatible pronouns if that's relevant to the matching
+    // Small bonus for compatible pronouns
     double pronounsCompat = 0.0;
     if (user1.pronouns.isNotEmpty && user2.pronouns.isNotEmpty) {
       if (user1.pronouns == user2.pronouns || 
           user1.pronouns == 'All Pronouns' || 
           user2.pronouns == 'All Pronouns') {
-        pronounsCompat = 0.1;  // Small bonus
+        pronounsCompat = 0.1;
       }
     }
     
-    // --- Calculate weighted final score ---
-    // Apply the user's prioritization preference via majorMultiplier
+    // Apply user's prioritization preferences
     double majorWeight = majorMultiplier;
     double interestWeight = 1.0 - majorMultiplier;
-    
-    // Add small weights to secondary factors
     double bioWeight = 0.15;
     double pronounsWeight = 0.05;
     
@@ -443,53 +490,183 @@ class _MatchingScreenState extends State<MatchingScreen> with SingleTickerProvid
     bioWeight /= totalWeight;
     pronounsWeight /= totalWeight;
     
-    // Calculate final score (0.0 to 1.0 range)
+    // Calculate final weighted score
     double finalScore = (majorProximity * majorWeight) +
                        (interestOverlap * interestWeight) +
                        (bioCompatibility * bioWeight) +
                        (pronounsCompat * pronounsWeight);
     
-    // Apply a curve for better spread of results (optional)
-    // This will make high matches stand out more and low matches less relevant
+    // Apply curve for better distribution
     double curvedScore = pow(finalScore, 1.2).toDouble();
     
     return curvedScore;
   }
 
+  // Calculate percentage of matching interests
   double countMatchingInterests(List<String> interests1, List<String> interests2) {
     if (interests1.isEmpty) return 0;
     
-    double commonInterests = 0;
+    int commonCount = 0;
     for (String interest in interests1) {
       if (interests2.contains(interest)) {
-        commonInterests++;
+        commonCount++;
       }
     }
-    return interests1.isNotEmpty ? commonInterests / interests1.length : 0;
+    return interests1.isNotEmpty ? commonCount / interests1.length : 0;
   }
 
-  // Helper function to get color based on match percentage
+  // Get color for match percentage display
   Color getMatchColor(int percentage) {
-    if (percentage > 90) return _kAccentColor;
-    if (percentage > 80) return _kTraditionsColor;
-    if (percentage > 70) return Color(0xFF8BC34A); // Light green
-    return Color(0xFF9E9E9E); // Grey
+    if (percentage > 90) return kVCURed;
+    if (percentage > 80) return kVCUGold;
+    if (percentage > 70) return kVCUGreen;
+    return Colors.grey[600]!;
   }
 
-  // Modified calculation function with caching
-  Future<List<User>> calculateScoresForUsers(String referenceMajor, List<String> referenceInterests) async {
-    // Fetch users from Firestore
-    List<User> users = await fetchUsersFromFirestore();
+  // Fetch users from Firestore
+  Future<List<User>> fetchUsersFromFirestore() async {
+    try {
+      final userCollection = FirebaseFirestore.instance.collection('users');
+Query query = userCollection;  // Define as Query type
 
-    // List to store users and their scores
+if (_selectedGenderFilter != null) {
+  query = query.where('pronouns', isEqualTo: _selectedGenderFilter);
+}
+
+// Execute the query
+final snapshot = await query.get();
+
+      List<User> users = [];
+      for (var doc in snapshot.docs) {
+        String id = doc.id;
+        Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+        
+        // Skip current user
+        auth.User? currentAuthUser = auth.FirebaseAuth.instance.currentUser;
+        if (currentAuthUser != null && id == currentAuthUser.uid) {
+          continue;
+        }
+        
+        // Apply major filter if selected
+        if (_selectedMajorFilter != null) {
+          String userMajor = data['major'] ?? '';
+          if (_selectedMajorFilter != userMajor) {
+            continue; // Skip this user if major doesn't match
+          }
+        }
+        
+        // Handle name data safely
+        String? userName;
+        if (data.containsKey('name') && data['name'] != null) {
+          userName = data['name'];
+        } else if (data.containsKey('firstName') && data['firstName'] != null) {
+          userName = data['firstName'];
+          if (data.containsKey('lastName') && data['lastName'] != null) {
+            userName = "$userName ${data['lastName']}";
+          }
+        }
+        
+        // Handle other fields with fallbacks
+        String major = data['major'] ?? '';
+        String pronouns = data['pronouns'] ?? '';
+        String gender = data['gender'] ?? '';
+        
+        // Safely handle interests list
+        List<String> interests = [];
+        if (data.containsKey('interests') && data['interests'] != null) {
+          if (data['interests'] is List) {
+            interests = List<String>.from(data['interests'].map((i) => i.toString()));
+          }
+        }
+        
+        String bio = data['bio'] ?? '';
+        String profilePicture = data['profile_picture'] ?? '';
+        
+        users.add(User(
+          id: id, 
+          name: userName, 
+          major: major, 
+          pronouns: pronouns, 
+          interests: interests, 
+          bio: bio,
+          profilePicture: profilePicture,
+          gender: gender,
+        ));
+      }
+      return users;
+    } catch (e) {
+      print('Error fetching users: $e');
+      // Return sample data if Firestore fails
+      return [
+        User(
+          id: 'johnsmith',
+          name: 'John Smith',
+          major: 'Computer Science',
+          pronouns: 'He/Him',
+          interests: ['Technology', 'Gaming', 'Music'],
+          bio: 'A passionate computer science student who loves coding and gaming.',
+          gender: 'Male',
+        ),
+        User(
+          id: 'emilywilson',
+          name: 'Emily Wilson',
+          major: 'Psychology',
+          pronouns: 'She/Her',
+          interests: ['Reading', 'Music', 'Photography', 'Psychology'],
+          bio: 'Psychology student interested in cognitive science and music therapy.',
+          gender: 'Female',
+        ),
+        User(
+          id: 'michaeljones',
+          name: 'Michael Jones',
+          major: 'Business',
+          pronouns: 'He/Him',
+          interests: ['Finance', 'Sports', 'Travel'],
+          bio: 'Business student with a passion for finance and investments.',
+          gender: 'Male',
+        ),
+        User(
+          id: 'sophiadavis',
+          name: 'Sophia Davis',
+          major: 'Biology',
+          pronouns: 'She/Her',
+          interests: ['Science', 'Reading', 'Hiking', 'Technology'],
+          bio: 'Future doctor studying Biology with a focus on genetics research.',
+          gender: 'Female',
+        ),
+        User(
+          id: 'jameswilliams',
+          name: 'James Williams',
+          major: 'Art History',
+          pronouns: 'They/Them',
+          interests: ['Art', 'Museums', 'Photography', 'Travel'],
+          bio: 'Art history enthusiast exploring the intersections of modern and classical art.',
+          gender: 'Non-binary',
+        ),
+      ];
+    }
+  }
+
+  // Calculate scores for all users and sort by match quality
+  Future<List<User>> calculateAndSortUsers() async {
+    List<User> users = await fetchUsersFromFirestore();
     List<Map<String, dynamic>> userScores = [];
 
-    // Compute scores for each user
+    // Reference user for comparison
+    User referenceUser = User(
+      id: 'reference',
+      name: 'You',
+      major: referenceMajor,
+      pronouns: '',
+      interests: referenceInterests,
+      bio: '',
+    );
+
+    // Calculate scores for each user
     for (var user in users) {
-      // Create a cache key based on user ID, reference major, and interests
       String cacheKey = '${user.id}_${referenceMajor}_${referenceInterests.join('_')}_$majorMultiplier';
       
-      // Check if score is already cached
+      // Use cached score if available
       if (_scoreCache.containsKey(cacheKey)) {
         userScores.add({
           'user': user,
@@ -498,67 +675,58 @@ class _MatchingScreenState extends State<MatchingScreen> with SingleTickerProvid
         continue;
       }
       
-      // Calculate score using the optimized algorithm
-      double totalScore = calculateOptimizedScore(
-        User(
-          id: 'reference',
-          name: 'You',
-          major: referenceMajor,
-          pronouns: '',
-          interests: referenceInterests,
-          bio: '',
-        ),
-        user
-      );
+      // Calculate new score
+      double score = calculateMatchScore(referenceUser, user);
+      _scoreCache[cacheKey] = score;
       
-      // Cache the score
-      _scoreCache[cacheKey] = totalScore;
-
-      // Add user and score to the list
       userScores.add({
         'user': user,
-        'score': totalScore,
+        'score': score,
       });
     }
 
-    // Sort users by score in descending order
+    // Sort by score (highest first)
     userScores.sort((a, b) => b['score'].compareTo(a['score']));
-
-    // Create a sorted list of users based on their scores
-    List<User> sortedUsers = userScores.map((entry) => entry['user'] as User).toList();
-
-    // Return the sorted list of users
-    return sortedUsers;
+    
+    // Extract sorted users
+    return userScores.map((entry) => entry['user'] as User).toList();
   }
 
-  // Clear cache when needed (e.g., when filter values change)
+  // Clear cache (when filter changes)
   void _clearScoreCache() {
     _scoreCache.clear();
   }
 
-  // Initialize the user list by fetching data and sorting by score
+  // Initialize user list with sorted matches
   Future<void> _initializeUserList() async {
-    List<User> sortedUsers = await calculateScoresForUsers(
-        referenceMajor, referenceInterests
-    );
+    try {
+      List<User> sortedUsers = await calculateAndSortUsers();
 
-    if (mounted) {
-      setState(() {
-        matchedUsers = sortedUsers;
-        isLoading = false; // Set loading state to false when data is fetched
-        _displayedUsers = []; // Clear displayed users
-        _currentIndex = 0;
-        _loadMoreUsers(); // Load initial batch of users
-      });
+      if (mounted) {
+        setState(() {
+          matchedUsers = sortedUsers;
+          isLoading = false;
+          _displayedUsers = [];
+          _currentIndex = 0;
+          _loadMoreUsers();
+        });
+      }
+    } catch (e) {
+      print('Error initializing user list: $e');
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+          matchedUsers = [];
+        });
+      }
     }
   }
 
+  // Load next batch of users
   void _loadMoreUsers() {
     if (_currentIndex >= matchedUsers.length) return;
     
-    final int endIndex = (_currentIndex + _batchSize) > matchedUsers.length
-        ? matchedUsers.length
-        : _currentIndex + _batchSize;
+    final int endIndex = min(_currentIndex + _batchSize, matchedUsers.length);
 
     if (mounted) {
       setState(() {
@@ -568,17 +736,211 @@ class _MatchingScreenState extends State<MatchingScreen> with SingleTickerProvid
     }
   }
 
+  // Apply filters and refresh user list
+  void _applyFilters() {
+    // Clear cached results to force recalculation with filters
+    _clearScoreCache();
+    
+    // Reset the displayed users
+    setState(() {
+      _displayedUsers = [];
+      _currentIndex = 0;
+      isLoading = true;
+    });
+    
+    // Re-initialize user list with filters
+    _initializeUserList();
+  }
+  
+  // Show filter dialog
+  void _showFilterDialog() {
+  setState(() {
+    _showFilterModal = false; // Reset the flag
+  });
+  
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    ),
+    builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header
+                  Row(
+                    children: [
+                      const Text(
+                        'Filter Matches',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: kVCUBlack,
+                        ),
+                      ),
+                      const Spacer(),
+                      IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ],
+                  ),
+                  const Divider(),
+                  const SizedBox(height: 16),
+                  
+                  // Gender filter section
+                  const Text(
+                    'Gender',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: kDarkText,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    children: _genderOptions.map((gender) {
+                      final isSelected = _selectedGenderFilter == gender || 
+                                        (gender == 'All' && _selectedGenderFilter == null);
+                      return ChoiceChip(
+                        label: Text(gender),
+                        selected: isSelected,
+                        selectedColor: kVCUGold,
+                        labelStyle: TextStyle(
+                          color: isSelected ? kVCUBlack : Colors.grey[700],
+                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                        ),
+                        onSelected: (selected) {
+                          setModalState(() {
+                            _selectedGenderFilter = selected ? 
+                                                (gender == 'All' ? null : gender) : 
+                                                null;
+                          });
+                        },
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 20),
+                  
+                  // Major filter section
+                  const Text(
+                    'Major',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: kDarkText,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey[300]!),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        value: _selectedMajorFilter ?? 'All Majors',
+                        isExpanded: true,
+                        hint: const Text('Select a major'),
+                        icon: const Icon(Icons.arrow_drop_down),
+                        items: _allMajors.map((major) {
+                          return DropdownMenuItem(
+                            value: major,
+                            child: Text(
+                              major,
+                              style: TextStyle(
+                                color: major == _selectedMajorFilter ? kVCUGold : kDarkText,
+                                fontWeight: major == _selectedMajorFilter ? 
+                                          FontWeight.bold : FontWeight.normal,
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          setModalState(() {
+                            if (value == 'All Majors') {
+                              _selectedMajorFilter = null;
+                            } else {
+                              _selectedMajorFilter = value;
+                            }
+                          });
+                        },
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  
+                  // Apply and Reset buttons
+                  Row(
+                    children: [
+                      OutlinedButton(
+                        onPressed: () {
+                          setModalState(() {
+                            _selectedGenderFilter = null;
+                            _selectedMajorFilter = null;
+                          });
+                        },
+                        style: OutlinedButton.styleFrom(
+                          side: BorderSide(color: Colors.grey[400]!),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        ),
+                        child: const Text('Reset Filters'),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Navigator.pop(context);
+                            _applyFilters();
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: kVCUGold,
+                            foregroundColor: kVCUBlack,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
+                          child: const Text(
+                            'Apply Filters',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  // Add some padding for bottom safe area
+                  // Add some padding for bottom safe area
+                  SizedBox(height: MediaQuery.of(context).padding.bottom),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   // Match explanation modal
   void _showMatchExplanation(BuildContext context, User user, int matchPercentage) {
-    // Calculate actual scores for explanation
-    double proximityScore = calculateProximityPoints(referenceMajor, user.major);
+    // Calculate individual scores for explanation
+    double majorScore = calculateProximityPoints(referenceMajor, user.major);
     double interestScore = countMatchingInterests(referenceInterests, user.interests);
-    double totalScore = (proximityScore * majorMultiplier) + (interestScore * (1 - majorMultiplier));
     
-    // Format scores as percentages
-    int majorPercentage = (proximityScore * 100).round();
+    int majorPercentage = (majorScore * 100).round();
     int interestsPercentage = (interestScore * 100).round();
-    int actualMatchPercentage = (totalScore * 100).round();
     
     showModalBottomSheet(
       context: context,
@@ -592,12 +954,12 @@ class _MatchingScreenState extends State<MatchingScreen> with SingleTickerProvid
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 'How We Matched You',
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: _kPrimaryColor,
+                  color: kVCUBlack,
                 ),
               ),
               const SizedBox(height: 16),
@@ -605,7 +967,7 @@ class _MatchingScreenState extends State<MatchingScreen> with SingleTickerProvid
               // Major match
               Row(
                 children: [
-                  const Icon(Icons.school, color: _kPrimaryColor, size: 20),
+                  Icon(Icons.school, color: kVCUGold, size: 20),
                   const SizedBox(width: 8),
                   const Text(
                     'Academic Match:',
@@ -617,10 +979,10 @@ class _MatchingScreenState extends State<MatchingScreen> with SingleTickerProvid
                   const Spacer(),
                   Text(
                     '$majorPercentage%',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
-                      color: _kPrimaryColor,
+                      color: kVCUGold,
                     ),
                   ),
                 ],
@@ -638,7 +1000,7 @@ class _MatchingScreenState extends State<MatchingScreen> with SingleTickerProvid
               // Interest match
               Row(
                 children: [
-                  const Icon(Icons.favorite, color: _kAccentColor, size: 20),
+                  Icon(Icons.favorite, color: kVCURed, size: 20),
                   const SizedBox(width: 8),
                   const Text(
                     'Interest Match:',
@@ -650,17 +1012,17 @@ class _MatchingScreenState extends State<MatchingScreen> with SingleTickerProvid
                   const Spacer(),
                   Text(
                     '$interestsPercentage%',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
-                      color: _kAccentColor,
+                      color: kVCURed,
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 4),
               
-              // Show common interests
+              // Common interests
               Wrap(
                 spacing: 8,
                 children: user.interests.map((interest) {
@@ -670,11 +1032,11 @@ class _MatchingScreenState extends State<MatchingScreen> with SingleTickerProvid
                       interest,
                       style: TextStyle(
                         fontSize: 12,
-                        color: isCommon ? _kPrimaryColor : Colors.grey[700],
+                        color: isCommon ? kVCUBlack : Colors.grey[700],
                       ),
                     ),
-                    backgroundColor: isCommon 
-                        ? _kPrimaryColor.withOpacity(0.15)
+                    backgroundColor: isCommon  
+                        ? kVCUGold.withOpacity(0.15)
                         : Colors.grey[200],
                   );
                 }).toList(),
@@ -698,11 +1060,11 @@ class _MatchingScreenState extends State<MatchingScreen> with SingleTickerProvid
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                     decoration: BoxDecoration(
-                      color: getMatchColor(actualMatchPercentage),
+                      color: getMatchColor(matchPercentage),
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Text(
-                      '$actualMatchPercentage%',
+                      '$matchPercentage%',
                       style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
@@ -719,8 +1081,8 @@ class _MatchingScreenState extends State<MatchingScreen> with SingleTickerProvid
                 child: ElevatedButton(
                   onPressed: () => Navigator.pop(context),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: _kPrimaryColor,
-                    foregroundColor: Colors.white,
+                    backgroundColor: kVCUGold,
+                    foregroundColor: kVCUBlack,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),
@@ -736,689 +1098,161 @@ class _MatchingScreenState extends State<MatchingScreen> with SingleTickerProvid
     );
   }
 
-  // Filter widget with horizontal slider
-  Widget _buildFilterWidget() {
-  return Padding(
-    padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Title at the top
-        const Text(
-          'Matching Priority:',
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: _kDarkText,
-          ),
-        ),
-        const SizedBox(height: 12),
-        
-        // Slider with labels on sides
-        Row(
-          children: [
-            // Left label (Interests)
-            Text(
-              'Interests',
-              style: TextStyle(
-                fontSize: 12,
-                color: _filterValue < 0.5 ? _kPrimaryColor : Colors.grey[600],
-                fontWeight: _filterValue < 0.5 ? FontWeight.bold : FontWeight.normal,
-              ),
-            ),
-            
-            // Slider (expanded to take available space)
-            Expanded(
-              child: SliderTheme(
-                data: SliderThemeData(
-                  activeTrackColor: _kPrimaryColor,
-                  inactiveTrackColor: Colors.grey[300],
-                  thumbColor: _kPrimaryColor,
-                  overlayColor: _kPrimaryColor.withOpacity(0.2),
-                ),
-                child: Slider(
-                  value: _filterValue,
-                  min: 0.0,
-                  max: 1.0,
-                  divisions: 10,
-                  onChanged: (value) {
-                    setState(() {
-                      _filterValue = value;
-                      majorMultiplier = value;
-                      // Reset and reload matches with new weights
-                      _clearScoreCache();
-                      _displayedUsers = [];
-                      _currentIndex = 0;
-                      _initializeUserList();
-                    });
-                  },
-                ),
-              ),
-            ),
-            
-            // Right label (Major)
-            Text(
-              'Major',
-              style: TextStyle(
-                fontSize: 12,
-                color: _filterValue > 0.5 ? _kPrimaryColor : Colors.grey[600],
-                fontWeight: _filterValue > 0.5 ? FontWeight.bold : FontWeight.normal,
-              ),
-            ),
-          ],
-        ),
-      ],
-    ),
-  );
-}
+  // Method to establish a connection and send a message
+  Future<void> _connectWithUser(User matchedUser) async {
+    try {
+      // Show loading indicator
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Connecting with ${matchedUser.name}...')),
+      );
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        title: const Text(
-          'Find Your Match',
-          style: TextStyle(
-            color: _kPrimaryColor,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: _kDarkText),
-          onPressed: () => Navigator.pop(context),
-        ),
-        actions: [
-          // Add info button to reopen the onboarding
-          IconButton(
-            icon: const Icon(Icons.info_outline, color: _kPrimaryColor),
-            onPressed: _showOnboardingScreen,
-            tooltip: 'Learn about matching',
-          ),
-        ],
-      ),
-      body: isLoading
-          ? _buildLoadingState()
-          : _buildContent(),
-    );
-  }
-
-  Widget _buildLoadingState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: const [
-          SizedBox(
-            width: 80,
-            height: 80,
-            child: CircularProgressIndicator(
-              color: _kPrimaryColor,
-              strokeWidth: 3,
-            ),
-          ),
-          SizedBox(height: 24),
-          Text(
-            'Finding your matches...',
-            style: TextStyle(
-              fontSize: 18,
-              color: _kPrimaryColor,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildContent() {
-    return CustomScrollView(
-      controller: _scrollController,
-      slivers: [
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'You\'ve Matched!',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: _kDarkText,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'We\'ve found ${matchedUsers.length} RAMs that match your interests and academic focus.',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[700],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        
-        // Add filter widget
-        SliverToBoxAdapter(
-          child: _buildFilterWidget(),
-        ),
-        
-        SliverList(
-          delegate: SliverChildBuilderDelegate(
-            (context, index) {
-              final user = _displayedUsers[index];
-              
-              // Calculate actual match percentage based on optimized score
-              double score = calculateOptimizedScore(
-                User(
-                  id: 'reference',
-                  name: 'You',
-                  major: referenceMajor,
-                  pronouns: '',
-                  interests: referenceInterests,
-                  bio: '',
-                ),
-                user
-              );
-              int matchPercentage = (score * 100).round();
-              
-              return _buildUserCard(
-                context,
-                user: user,
-                matchPercentage: matchPercentage,
-                index: index,
-              );
-            },
-            childCount: _displayedUsers.length,
-          ),
-        ),
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical:16),
-            child: _currentIndex < matchedUsers.length
-                ? Center(
-                    child: CircularProgressIndicator(
-                      color: _kPrimaryColor.withOpacity(0.5),
-                    ),
-                  )
-                : Center(
-                    child: Text(
-                      'That\'s all for now!',
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                        fontSize: 14,
-                      ),
-                    ),
-                  ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  // Improved user card for the matching screen
-  Widget _buildUserCard(
-    BuildContext context, {
-    required User user,
-    required int matchPercentage,
-    required int index,
-  }) {
-    // Handle profile picture or generate avatar
-    Widget avatarWidget = _buildLetterAvatar(user.name);
-    
-    if (user.profilePicture.isNotEmpty) {
-      try {
-        // Try to display profile picture if it exists
-        avatarWidget = Container(
-          width: 60,
-          height: 60,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 4,
-                offset: const Offset(0, 2),
-              ),
-            ],
-            image: DecorationImage(
-              image: FileImage(File(user.profilePicture)),
-              fit: BoxFit.cover,
-            ),
-          ),
+      // Get current user from Firebase
+      final currentUser = auth.FirebaseAuth.instance.currentUser;
+      if (currentUser == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('You need to be logged in to connect')),
         );
-      } catch (e) {
-        // Leave the default letter avatar if image loading fails
-        print("Error loading profile image: $e");
+        return;
       }
-    }
-    
-    // Find common interests
-    List<String> commonInterests = [];
-    for (String interest in user.interests) {
-      if (referenceInterests.contains(interest)) {
-        commonInterests.add(interest);
+
+      // Get current user data from Firestore
+      final currentUserDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(currentUser.uid)
+          .get();
+
+      if (!currentUserDoc.exists) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Your profile data is not available')),
+        );
+        return;
       }
-    }
 
-    // Get color based on match percentage
-    Color matchColor = getMatchColor(matchPercentage);
-    
-    // Improve bio preview - truncate if needed
-    String bioPreview = user.bio;
-    if (bioPreview.length > 120) {
-      bioPreview = '${bioPreview.substring(0, 117)}...';
-    }
+      final currentUserData = currentUserDoc.data() as Map<String, dynamic>;
+      final currentUserName = currentUserData['name'] ?? 'VCU Student';
 
-    // Truncate name if too long
-    final String displayName = user.name.length > 20 
-        ? '${user.name.substring(0, 18)}...' 
-        : user.name;
+      // Check if there's an existing chat between these users
+      // We'll create a unique chat ID by combining both user IDs alphabetically
+      final List<String> userIds = [currentUser.uid, matchedUser.id];
+      userIds.sort(); // Sort to ensure same ID regardless of who initiates
+      final String chatId = userIds.join('_');
 
-    return Card(
-      elevation: 3, // Slightly more elevation for better shadow
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(
-          color: matchPercentage > 80 ? matchColor.withOpacity(0.3) : Colors.transparent, 
-          width: 1.5
+      // Check if a chat document already exists
+      final chatDoc = await FirebaseFirestore.instance
+          .collection('chats')
+          .doc(chatId)
+          .get();
+
+      final timestamp = FieldValue.serverTimestamp();
+      
+      if (!chatDoc.exists) {
+        // Create a new chat document with pending request status
+        await FirebaseFirestore.instance.collection('chats').doc(chatId).set({
+          'participants': userIds,
+          'participantNames': {
+            currentUser.uid: currentUserName,
+            matchedUser.id: matchedUser.name,
+          },
+          'createdAt': timestamp,
+          'lastMessage': 'Hi, I found you through VCU Connect!',
+          'lastMessageTime': timestamp,
+          'lastMessageSender': currentUser.uid,
+          'unreadCount': {
+            currentUser.uid: 0,
+            matchedUser.id: 1, // One unread message for the recipient
+          },
+          'status': {
+            currentUser.uid: 'accepted', // Sender automatically accepts
+            matchedUser.id: 'pending', // Recipient needs to accept
+          },
+        });
+      }
+
+      // Add the initial message
+      await FirebaseFirestore.instance
+          .collection('chats')
+          .doc(chatId)
+          .collection('messages')
+          .add({
+        'senderId': currentUser.uid,
+        'senderName': currentUserName,
+        'text': 'Hi, I found you through VCU Connect!',
+        'timestamp': timestamp,
+        'isRead': false,
+      });
+      
+      // For current user - add to active chats
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(currentUser.uid)
+          .collection('user_chats')
+          .doc(chatId)
+          .set({
+        'chatId': chatId,
+        'otherUserId': matchedUser.id,
+        'otherUserName': matchedUser.name,
+        'lastMessage': 'Hi, I found you through VCU Connect!',
+        'lastMessageTime': timestamp,
+        'unreadCount': 0, // Current user has read all messages
+        'updatedAt': timestamp,
+        'status': 'accepted', // Sender automatically accepts
+      });
+
+      // For matched user - add to message requests
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(matchedUser.id)
+          .collection('message_requests')
+          .doc(chatId)
+          .set({
+        'chatId': chatId,
+        'otherUserId': currentUser.uid,
+        'otherUserName': currentUserName,
+        'lastMessage': 'Hi, I found you through VCU Connect!',
+        'lastMessageTime': timestamp,
+        'unreadCount': 1, // Matched user has one unread message
+        'updatedAt': timestamp,
+        'status': 'pending', // Recipient needs to accept
+      });
+
+      // Success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Connection request sent to ${matchedUser.name}!'),
+          backgroundColor: Colors.green,
+          duration: const Duration(seconds: 2),
         ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header row with avatar, name, and match percentage
-            Row(
-              children: [
-                // Avatar with improved styling
-                avatarWidget,
-                const SizedBox(width: 16),
-                
-                // Name, major and pronouns with better styling
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        displayName,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: _kDarkText,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 2),
-                      Row(
-                        children: [
-                          Icon(Icons.school, size: 14, color: _kPrimaryColor.withOpacity(0.7)),
-                          const SizedBox(width: 4),
-                          Expanded(
-                            child: Text(
-                              user.major,
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                                color: _kPrimaryColor.withOpacity(0.9),
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 2),
-                      Row(
-                        children: [
-                          Icon(Icons.person_outline, size: 14, color: Colors.grey[600]),
-                          const SizedBox(width: 4),
-                          Text(
-                            user.pronouns,
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: Colors.grey[700],
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                
-                // Match percentage with improved visual
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: matchColor,
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: matchColor.withOpacity(0.3),
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Text(
-                        '$matchPercentage%',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    // Info button
-                    GestureDetector(
-                      onTap: () => _showMatchExplanation(context, user, matchPercentage),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.info_outline, size: 14, color: Colors.grey),
-                          const SizedBox(width: 2),
-                          Text(
-                            'Match Details',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            
-            const SizedBox(height: 16),
-            
-            // Divider
-            Divider(color: Colors.grey[200], height: 1),
-            const SizedBox(height: 12),
-            
-            // About section - with icon and better formatting
-            if (user.bio.isNotEmpty) ...[
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(Icons.description_outlined, size: 16, color: _kPrimaryColor),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'About',
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
-                            color: _kPrimaryColor,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          bioPreview,
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.grey[700],
-                            height: 1.3,
-                          ),
-                          maxLines: 3,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-            ],
-            
-            // Common Interests section with improved visuals
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(Icons.favorite_outline, size: 16, color: _kAccentColor),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          const Text(
-                            'Common Interests',
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.bold,
-                              color: _kAccentColor,
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          if (commonInterests.isNotEmpty)
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: _kAccentColor.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Text(
-                                '${commonInterests.length}',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                  color: _kAccentColor,
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                      const SizedBox(height: 6),
-                      
-                      // Interest tags with improved style
-                      SizedBox(
-                        height: 32,
-                        child: ListView.builder(
-                          scrollDirection: Axis.horizontal,
-                          itemCount: user.interests.length,
-                          itemBuilder: (context, index) {
-                            final interest = user.interests[index];
-                            final bool isCommon = commonInterests.contains(interest);
-                            return Container(
-                              margin: const EdgeInsets.only(right: 8),
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: isCommon 
-                                    ? _kPrimaryColor.withOpacity(0.15)
-                                    : Colors.grey[200],
-                                borderRadius: BorderRadius.circular(16),
-                                border: isCommon 
-                                    ? Border.all(color: _kPrimaryColor.withOpacity(0.3))
-                                    : null,
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  if (isCommon) ...[
-                                    Icon(
-                                      Icons.check_circle,
-                                      size: 12,
-                                      color: _kPrimaryColor,
-                                    ),
-                                    const SizedBox(width: 4),
-                                  ],
-                                  Text(
-                                    interest,
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: isCommon ? _kPrimaryColor : Colors.grey[700],
-                                      fontWeight: isCommon ? FontWeight.bold : FontWeight.normal,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            
-            const SizedBox(height: 16),
-            
-            // Action buttons with improved styling
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                TextButton(
-                  onPressed: () {
-                    // Show full profile
-                    _showDetailedProfile(context, user, matchPercentage);
-                  },
-                  style: TextButton.styleFrom(
-                    foregroundColor: _kPrimaryColor,
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      side: BorderSide(color: _kPrimaryColor.withOpacity(0.5)),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.person_outline, size: 16),
-                      const SizedBox(width: 4),
-                      const Text('View Profile', style: TextStyle(fontSize: 13)),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 8),
-                ElevatedButton(
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Connecting with $displayName...')),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: _kPrimaryColor,
-                    foregroundColor: Colors.white,
-                    elevation: 2,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.connect_without_contact, size: 16),
-                      const SizedBox(width: 4),
-                      const Text('Connect', style: TextStyle(fontSize: 13)),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+      );
 
-  // Helper to create letter avatar
-  Widget _buildLetterAvatar(String name) {
-    final Random random = Random(name.hashCode);
-    final Color avatarColor = Color.fromARGB(
-      255,
-      150 + random.nextInt(80),
-      150 + random.nextInt(80),
-      150 + random.nextInt(80),
-    );
-    
-    // Extract first letter for avatar
-    final String firstLetter = name.isNotEmpty ? name.substring(0, 1).toUpperCase() : 'U';
-    
-    return Container(
-      width: 60,
-      height: 60,
-      decoration: BoxDecoration(
-        color: avatarColor,
-        shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Center(
-        child: Text(
-          firstLetter,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
+      // Navigate to chat detail screen
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ChatDetailScreen(
+            name: matchedUser.name,
+            message: 'Hi, I found you through VCU Connect!',
+            chatId: chatId,
+            otherUserId: matchedUser.id,
+            status: 'accepted', // For sender, status is accepted
           ),
         ),
-      ),
-    );
+      );
+    } catch (e) {
+      // Error handling
+      print('Error connecting with user: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to connect: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
-  // New method to show detailed profile
   void _showDetailedProfile(BuildContext context, User user, int matchPercentage) {
-    // Handle profile picture for detailed view
-    Widget avatarWidget = _buildBigLetterAvatar(user.name);
-    
-    if (user.profilePicture.isNotEmpty) {
-      try {
-        // Try to display profile picture if it exists
-        avatarWidget = Container(
-          width: 100,
-          height: 100,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 4,
-                offset: const Offset(0, 2),
-              ),
-            ],
-            image: DecorationImage(
-              image: FileImage(File(user.profilePicture)),
-              fit: BoxFit.cover,
-            ),
-          ),
-        );
-      } catch (e) {
-        // Leave the default letter avatar if image loading fails
-        print("Error loading profile image for details view: $e");
-      }
-    }
-    
     showModalBottomSheet(
       context: context,
-      isScrollControlled: true, // Make it expandable
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -1446,7 +1280,7 @@ class _MatchingScreenState extends State<MatchingScreen> with SingleTickerProvid
                       style: const TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
-                        color: _kDarkText,
+                        color: kVCUBlack,
                       ),
                     ),
                     Container(
@@ -1469,8 +1303,10 @@ class _MatchingScreenState extends State<MatchingScreen> with SingleTickerProvid
                 
                 const SizedBox(height: 24),
                 
-                // Profile picture centered
-                Center(child: avatarWidget),
+                // Profile picture
+                Center(
+                  child: buildUserAvatar(user, size: 120, showBorder: true),
+                ),
                 
                 const SizedBox(height: 24),
                 
@@ -1496,7 +1332,7 @@ class _MatchingScreenState extends State<MatchingScreen> with SingleTickerProvid
                                 icon: Icons.school,
                                 title: 'Major',
                                 value: user.major,
-                                iconColor: _kPrimaryColor,
+                                iconColor: kVCUGold,
                               ),
                               const SizedBox(height: 16),
                               
@@ -1505,8 +1341,19 @@ class _MatchingScreenState extends State<MatchingScreen> with SingleTickerProvid
                                 icon: Icons.person,
                                 title: 'Pronouns',
                                 value: user.pronouns,
-                                iconColor: Colors.grey[700]!,
+                                iconColor: kVCUPurple,
                               ),
+                              
+                              // Show gender if available
+                              if (user.gender.isNotEmpty) ...[
+                                const SizedBox(height: 16),
+                                _buildProfileField(
+                                  icon: Icons.people,
+                                  title: 'Gender',
+                                  value: user.gender,
+                                  iconColor: kVCUBlue,
+                                ),
+                              ],
                             ],
                           ),
                         ),
@@ -1519,7 +1366,7 @@ class _MatchingScreenState extends State<MatchingScreen> with SingleTickerProvid
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color: _kPrimaryColor,
+                          color: kVCUBlack,
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -1549,7 +1396,7 @@ class _MatchingScreenState extends State<MatchingScreen> with SingleTickerProvid
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color: _kPrimaryColor,
+                          color: kVCUBlack,
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -1562,11 +1409,11 @@ class _MatchingScreenState extends State<MatchingScreen> with SingleTickerProvid
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                             decoration: BoxDecoration(
                               color: isCommon 
-                                  ? _kPrimaryColor.withOpacity(0.15)
+                                  ? kVCUGold.withOpacity(0.15) 
                                   : Colors.grey[200],
                               borderRadius: BorderRadius.circular(16),
                               border: isCommon 
-                                  ? Border.all(color: _kPrimaryColor.withOpacity(0.3))
+                                  ? Border.all(color: kVCUGold) 
                                   : null,
                             ),
                             child: Row(
@@ -1576,7 +1423,7 @@ class _MatchingScreenState extends State<MatchingScreen> with SingleTickerProvid
                                   Icon(
                                     Icons.check_circle,
                                     size: 14,
-                                    color: _kPrimaryColor,
+                                    color: kVCUGold,
                                   ),
                                   const SizedBox(width: 6),
                                 ],
@@ -1584,7 +1431,7 @@ class _MatchingScreenState extends State<MatchingScreen> with SingleTickerProvid
                                   interest,
                                   style: TextStyle(
                                     fontSize: 14,
-                                    color: isCommon ? _kPrimaryColor : Colors.grey[700],
+                                    color: isCommon ? kVCUGold : Colors.grey[700],
                                     fontWeight: isCommon ? FontWeight.bold : FontWeight.normal,
                                   ),
                                 ),
@@ -1595,17 +1442,15 @@ class _MatchingScreenState extends State<MatchingScreen> with SingleTickerProvid
                       ),
                       const SizedBox(height: 30),
                       
-                      // Connect button
+                      // Connect button with updated request message
                       ElevatedButton(
                         onPressed: () {
-                          Navigator.pop(context);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Connecting with ${user.name}...')),
-                          );
+                          Navigator.pop(context); // Close the profile modal
+                          _connectWithUser(user);
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: _kPrimaryColor,
-                          foregroundColor: Colors.white,
+                          backgroundColor: kVCUGold,
+                          foregroundColor: kVCUBlack,
                           elevation: 2,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -1613,7 +1458,7 @@ class _MatchingScreenState extends State<MatchingScreen> with SingleTickerProvid
                           padding: const EdgeInsets.symmetric(vertical: 14),
                         ),
                         child: const Text(
-                          'Connect',
+                          'Send Connection Request',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -1630,48 +1475,8 @@ class _MatchingScreenState extends State<MatchingScreen> with SingleTickerProvid
       ),
     );
   }
-  
-  // Helper for larger letter avatar in details view
-  Widget _buildBigLetterAvatar(String name) {
-    final Random random = Random(name.hashCode);
-    final Color avatarColor = Color.fromARGB(
-      255,
-      150 + random.nextInt(80),
-      150 + random.nextInt(80),
-      150 + random.nextInt(80),
-    );
-    
-    // Extract first letter for avatar
-    final String firstLetter = name.isNotEmpty ? name.substring(0, 1).toUpperCase() : 'U';
-    
-    return Container(
-      width: 100,
-      height: 100,
-      decoration: BoxDecoration(
-        color: avatarColor,
-        shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Center(
-        child: Text(
-          firstLetter,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 40,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
-    );
-  }
 
-  // Helper for building profile fields
+  // Helper for profile field display
   Widget _buildProfileField({
     required IconData icon, 
     required String title, 
@@ -1714,11 +1519,11 @@ class _MatchingScreenState extends State<MatchingScreen> with SingleTickerProvid
               ),
               const SizedBox(height: 4),
               Text(
-                value,
+                value.isNotEmpty ? value : 'Not specified',
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
-                  color: _kDarkText,
+                  color: kVCUBlack,
                 ),
               ),
             ],
@@ -1726,5 +1531,597 @@ class _MatchingScreenState extends State<MatchingScreen> with SingleTickerProvid
         ),
       ],
     );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: kBackgroundColor,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 1,
+        title: const Text(
+          'Find Your Match',
+          style: TextStyle(
+            color: kVCUBlack,
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+          ),
+        ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: kVCUBlack),
+          onPressed: () => Navigator.pop(context),
+        ),
+        actions: [
+          // Add filter button
+          IconButton(
+  icon: const Icon(Icons.filter_list, color: kVCUBlack),
+  onPressed: () {
+    setState(() {
+      _showFilterModal = true;
+    });
+    // Add this line to immediately show the dialog rather than waiting for rebuild
+    _showFilterDialog();
+  },
+  tooltip: 'Filter matches',
+),
+          IconButton(
+            icon: const Icon(Icons.info_outline, color: kVCUBlack),
+            onPressed: _showOnboardingScreen,
+            tooltip: 'Learn about matching',
+          ),
+        ],
+      ),
+      body: isLoading
+          ? _buildLoadingState()
+          : _buildContent(),
+    );
+  }
+
+  Widget _buildLoadingState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          SizedBox(
+            width: 70,
+            height: 70,
+            child: CircularProgressIndicator(
+              color: kVCUGold,
+              strokeWidth: 2,
+            ),
+          ),
+          const SizedBox(height: 24),
+          const Text(
+            'Finding your matches...',
+            style: TextStyle(
+              fontSize: 18,
+              color: kVCUBlack,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildContent() {
+    return CustomScrollView(
+      controller: _scrollController,
+      physics: const AlwaysScrollableScrollPhysics(),
+      slivers: [
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'You\'ve Matched!',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: kVCUBlack,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'We\'ve found ${matchedUsers.length} RAMs that match your interests and academic focus.',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.grey[700],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        
+        // Filter widget
+        SliverToBoxAdapter(
+          child: _buildFilterWidget(),
+        ),
+        
+        // User list
+        SliverPadding(
+          padding: const EdgeInsets.only(bottom: 16),
+          sliver: SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (context, index) {
+                final user = _displayedUsers[index];
+                
+                // Get match score for this user
+                double score = calculateMatchScore(
+                  User(
+                    id: 'reference',
+                    name: 'You',
+                    major: referenceMajor,
+                    pronouns: '',
+                    interests: referenceInterests,
+                    bio: '',
+                  ),
+                  user
+                );
+                int matchPercentage = (score * 100).round();
+                
+                return _buildUserCard(
+                  context,
+                  user: user,
+                  matchPercentage: matchPercentage,
+                  index: index,
+                );
+              },
+              childCount: _displayedUsers.length,
+            ),
+          ),
+        ),
+        
+        // Loading or end indicator
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: _currentIndex < matchedUsers.length
+                ? Center(
+                    child: CircularProgressIndicator(
+                      color: kVCUGold,
+                      strokeWidth: 2,
+                    ),
+                  )
+                : Center(
+                    child: Text(
+                      'That\'s all for now!',
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // Updated filter widget
+  Widget _buildFilterWidget() {
+    // Add filter status indicators
+    final bool hasActiveFilters = _selectedGenderFilter != null || _selectedMajorFilter != null;
+    
+    return Card(
+      margin: const EdgeInsets.fromLTRB(12, 4, 12, 12),
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: Colors.grey[200]!),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Text(
+                  'Matching Priority',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: kVCUBlack,
+                  ),
+                ),
+                const Spacer(),
+                // Show active filter indicators if any
+                if (hasActiveFilters) ...[
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: kVCUPurple.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.filter_list,
+                          size: 14,
+                          color: kVCUPurple,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Filters active',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: kVCUPurple,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ),
+            const SizedBox(height: 12),
+            
+            Row(
+              children: [
+                Text(
+                  'Interests',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: _filterValue < 0.5 ? kVCUGold : Colors.grey[600],
+                    fontWeight: _filterValue < 0.5 ? FontWeight.bold : FontWeight.normal,
+                  ),
+                ),
+                
+                Expanded(
+                  child: SliderTheme(
+                    data: SliderThemeData(
+                      activeTrackColor: kVCUGold,
+                      inactiveTrackColor: Colors.grey[300],
+                      thumbColor: kVCUGold,
+                      overlayColor: kVCUGold.withOpacity(0.2),
+                    ),
+                    child: Slider(
+                      value: _filterValue,
+                      min: 0.0,
+                      max: 1.0,
+                      divisions: 10,
+                      onChanged: (value) {
+                        setState(() {
+                          _filterValue = value;
+                          majorMultiplier = value;
+                          _clearScoreCache();
+                          _displayedUsers = [];
+                          _currentIndex = 0;
+                          _initializeUserList();
+                        });
+                      },
+                    ),
+                  ),
+                ),
+                
+                Text(
+                  'Major',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: _filterValue > 0.5 ? kVCUGold : Colors.grey[600],
+                    fontWeight: _filterValue > 0.5 ? FontWeight.bold : FontWeight.normal,
+                  ),
+                ),
+              ],
+            ),
+            
+            // Active filter chips
+            if (hasActiveFilters) ...[
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                children: [
+                  if (_selectedGenderFilter != null)
+                    Chip(
+                      label: Text(_selectedGenderFilter!),
+                      backgroundColor: kVCUGold.withOpacity(0.1),
+                      deleteIconColor: kVCUGold,
+                      labelStyle: const TextStyle(color: kVCUGold, fontSize: 12),
+                      onDeleted: () {
+                        setState(() {
+                          _selectedGenderFilter = null;
+                          _applyFilters();
+                        });
+                      },
+                    ),
+                  if (_selectedMajorFilter != null)
+                    Chip(
+                      label: Text(
+                        _selectedMajorFilter!.length > 20 
+                            ? '${_selectedMajorFilter!.substring(0, 18)}...' 
+                            : _selectedMajorFilter!,
+                      ),
+                      backgroundColor: kVCUGold.withOpacity(0.1),
+                      deleteIconColor: kVCUGold,
+                      labelStyle: const TextStyle(color: kVCUGold, fontSize: 12),
+                      onDeleted: () {
+                        setState(() {
+                          _selectedMajorFilter = null;
+                          _applyFilters();
+                        });
+                      },
+                    ),
+                ],
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  // User card with clean profile picture handling
+  Widget _buildUserCard(
+    BuildContext context, {
+    required User user,
+    required int matchPercentage,
+    required int index,
+  }) {
+    // Find common interests
+    List<String> commonInterests = [];
+    for (String interest in user.interests) {
+      if (referenceInterests.contains(interest)) {
+        commonInterests.add(interest);
+      }
+    }
+
+    // Get color based on match percentage
+    Color matchColor = getMatchColor(matchPercentage);
+    
+    // Truncate name if too long
+    final String displayName = user.name.length > 20 
+        ? '${user.name.substring(0, 18)}...' 
+        : user.name;
+
+    return Card(
+      elevation: 2,
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: matchPercentage > 80 ? matchColor.withOpacity(0.3) : Colors.transparent, 
+          width: 1.0
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header row with avatar, name, and match percentage
+            Row(
+              children: [
+                // Unified avatar display
+                buildUserAvatar(user, size: 50),
+                const SizedBox(width: 12),
+                
+                // Name, major and pronouns
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        displayName,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: kVCUBlack,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 2),
+                      Row(
+                        children: [
+                          Icon(Icons.school, size: 12, color: kVCUGold),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              user.major,
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                                color: kVCUBlack.withOpacity(0.8),
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (user.pronouns.isNotEmpty || user.gender.isNotEmpty) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          user.pronouns.isNotEmpty ? user.pronouns : user.gender,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[700],
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                
+                // Match percentage badge
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: matchColor,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    '$matchPercentage%',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            
+            const SizedBox(height: 10),
+            
+            // Bio preview if available
+            if (user.bio.isNotEmpty) ...[
+              Text(
+                user.bio.length > 80 ? '${user.bio.substring(0, 77)}...' : user.bio,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[700],
+                  height: 1.3,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 10),
+            ],
+            
+            // Interests section
+            if (user.interests.isNotEmpty) ...[
+              Row(
+                children: [
+                  Text(
+                    'Interests: ',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: kVCUBlack,
+                    ),
+                  ),
+                  // Common interests badge
+                  if (commonInterests.isNotEmpty) ...[
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                      decoration: BoxDecoration(
+                        color: kVCUGold.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        '${commonInterests.length} in common',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: kVCUGold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+              const SizedBox(height: 6),
+              
+              // Scrollable interest tags
+              SizedBox(
+                height: 26,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: user.interests.length,
+                  itemBuilder: (context, index) {
+                    final interest = user.interests[index];
+                    final bool isCommon = commonInterests.contains(interest);
+                    return Container(
+                      margin: const EdgeInsets.only(right: 6),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: isCommon 
+                            ? kVCUGold.withOpacity(0.15)
+                            : Colors.grey[200],
+                        borderRadius: BorderRadius.circular(12),
+                        border: isCommon 
+                            ? Border.all(color: kVCUGold.withOpacity(0.5))
+                            : null,
+                      ),
+                      child: Text(
+                        interest,
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: isCommon ? kVCUGold : Colors.grey[700],
+                          fontWeight: isCommon ? FontWeight.bold : FontWeight.normal,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+            
+            const SizedBox(height: 10),
+            
+            // Action buttons
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                // Match Details button
+                TextButton(
+                  onPressed: () => _showMatchExplanation(context, user, matchPercentage),
+                  style: TextButton.styleFrom(
+                    foregroundColor: kVCUBlue,
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  child: const Text(
+                    'Match Details',
+                    style: TextStyle(fontSize: 11),
+                  ),
+                ),
+                const SizedBox(width: 4),
+                // View Profile button
+                OutlinedButton(
+                  onPressed: () => _showDetailedProfile(context, user, matchPercentage),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: kVCUPurple,
+                    side: BorderSide(color: kVCUPurple.withOpacity(0.5)),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  child: const Text('View Profile', style: TextStyle(fontSize: 11)),
+                ),
+                const SizedBox(width: 4),
+                // Connect button - updated to show it sends a request
+                ElevatedButton(
+                  onPressed: () => _connectWithUser(user),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: kVCUGold,
+                    foregroundColor: kVCUBlack,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  child: const Text('Connect', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+  
+  // Show filter modal if needed
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_showFilterModal) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _showFilterDialog();
+      });
+    }
   }
 }
