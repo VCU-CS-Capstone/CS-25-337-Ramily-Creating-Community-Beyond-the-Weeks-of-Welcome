@@ -1,5 +1,4 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:ramily/Screens/main_navigator.dart';
 import 'profile_creation_screen.dart';
@@ -102,7 +101,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     controller: _emailController,
                     decoration: InputDecoration(
                       labelText: 'Email',
-                      labelStyle: TextStyle(color:kPrimaryColor),
+                      labelStyle: const TextStyle(color:kPrimaryColor),
                       prefixIcon: const Icon(Icons.email),
                       border: const OutlineInputBorder(),
                       filled: true,

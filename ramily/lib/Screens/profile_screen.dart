@@ -10,7 +10,7 @@ import 'constants.dart' as constants;
 class ProfileScreen extends StatefulWidget {
   final String email;
   
-  const ProfileScreen({Key? key, required this.email}) : super(key: key);
+  const ProfileScreen({super.key, required this.email});
 
   @override
   _ProfileScreenState createState() => _ProfileScreenState();
@@ -185,7 +185,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 14),
                       minimumSize: const Size(200, 46),
                     ),
-                    child: Text('Log Out', style: TextStyle(fontSize: 16, color: constants.kVCURed)),
+                    child: const Text('Log Out', style: TextStyle(fontSize: 16, color: constants.kVCURed)),
                   ),
                 ],
               ),

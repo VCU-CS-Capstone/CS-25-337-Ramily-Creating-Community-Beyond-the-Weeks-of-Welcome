@@ -5,7 +5,6 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:ramily/services/auth_service.dart';
-import 'home_screen.dart';
 import 'main_navigator.dart';
 import 'constants.dart' as constants;
 import 'package:image_cropper/image_cropper.dart';
@@ -411,7 +410,7 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
       };
 
       final String email = profileData['email'] as String;
-      final String password = 'dummyPassword123!';
+      const String password = 'dummyPassword123!';
 
       try {
         // Register the user with Firebase Auth
@@ -706,10 +705,10 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
                         ),
                       ],
                     ),
-                    child: CircleAvatar(
+                    child: const CircleAvatar(
                       radius: 18,
                       backgroundColor: constants.kPrimaryColor,
-                      child: const Icon(
+                      child: Icon(
                         Icons.camera_alt,
                         color: Colors.white,
                         size: 18,

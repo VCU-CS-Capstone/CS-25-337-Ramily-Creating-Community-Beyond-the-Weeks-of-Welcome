@@ -9,7 +9,7 @@ import 'constants.dart';
 class MainNavigator extends StatefulWidget {
   final String email;
   
-  const MainNavigator({Key? key, required this.email}) : super(key: key);
+  const MainNavigator({super.key, required this.email});
 
   @override
   _MainNavigatorState createState() => _MainNavigatorState();

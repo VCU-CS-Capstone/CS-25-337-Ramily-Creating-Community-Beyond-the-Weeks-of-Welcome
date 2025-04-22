@@ -2,12 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:percent_indicator/circular_percent_indicator.dart';
-import 'package:qr_flutter/qr_flutter.dart';
 import 'dart:math' as math;
 import 'constants.dart' as constants;
 
 class TraditionsScreen extends StatefulWidget {
-  const TraditionsScreen({Key? key}) : super(key: key);
+  const TraditionsScreen({super.key});
 
   @override
   _TraditionsScreenState createState() => _TraditionsScreenState();
@@ -21,7 +20,7 @@ class _TraditionsScreenState extends State<TraditionsScreen> with SingleTickerPr
   List<Map<String, dynamic>> _traditions = [];
   Map<String, bool> _completedTraditions = {};
   late AnimationController _animationController;
-  bool _showPrizeModal = false;
+  final bool _showPrizeModal = false;
   bool _isShowingModal = false;
 
   // Create a list of traditions with descriptions and locations
@@ -187,7 +186,7 @@ class _TraditionsScreenState extends State<TraditionsScreen> with SingleTickerPr
       });
       
       // Check for prize after loading (with a slight delay to allow UI to render)
-      Future.delayed(Duration(milliseconds: 500), () {
+      Future.delayed(const Duration(milliseconds: 500), () {
         _checkForPrize();
       });
       
@@ -502,15 +501,15 @@ class _TraditionsScreenState extends State<TraditionsScreen> with SingleTickerPr
                           color: constants.kVCULightGrey,
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Column(
+                        child: const Column(
                           children: [
-                            const Icon(
+                            Icon(
                               Icons.location_searching,
                               size: 48,
                               color: constants.kVCUBlue,
                             ),
-                            const SizedBox(height: 12),
-                            const Text(
+                            SizedBox(height: 12),
+                            Text(
                               'Visit this location and use the button below to verify your visit using GPS.',
                               textAlign: TextAlign.center,
                               style: TextStyle(
@@ -838,14 +837,14 @@ void _displayPrizeRedemptionModal() {
                             // Complete all to earn prize text - Fixed to prevent overflow
                             if (progress < 1.0) ...[
                               const SizedBox(height: 4),
-                              Row(
+                              const Row(
                                 children: [
-                                  const Icon(
+                                  Icon(
                                     Icons.emoji_events,
                                     color: constants.kVCURed,
                                     size: 16,
                                   ),
-                                  const SizedBox(width: 4),
+                                  SizedBox(width: 4),
                                   Expanded(
                                     child: Text(
                                       'Complete all for a prize!',
@@ -927,7 +926,7 @@ void _displayPrizeRedemptionModal() {
                           return a['name'].compareTo(b['name']);
                         }))
                         .map((tradition) => _buildTraditionCard(tradition))
-                        .toList(),
+                        ,
                       
                       // Seasonal events header
                       const Padding(
@@ -965,7 +964,7 @@ void _displayPrizeRedemptionModal() {
                           return a['name'].compareTo(b['name']);
                         }))
                         .map((tradition) => _buildTraditionCard(tradition, isSeasonalEvent: true))
-                        .toList(),
+                        ,
                     ],
                   ),
                 ),

@@ -9,7 +9,7 @@ import 'constants.dart' as constants;
 class ProfileEditorScreen extends StatefulWidget {
   final String email;
 
-  const ProfileEditorScreen({Key? key, required this.email}) : super(key: key);
+  const ProfileEditorScreen({super.key, required this.email});
 
   @override
   _ProfileEditorScreenState createState() => _ProfileEditorScreenState();
@@ -529,10 +529,10 @@ class _ProfileEditorScreenState extends State<ProfileEditorScreen> {
                                     ),
                                   ],
                                 ),
-                                child: CircleAvatar(
+                                child: const CircleAvatar(
                                   radius: 18,
                                   backgroundColor: constants.kPrimaryColor,
-                                  child: const Icon(
+                                  child: Icon(
                                     Icons.camera_alt,
                                     color: Colors.white,
                                     size: 18,

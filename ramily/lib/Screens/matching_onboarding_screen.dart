@@ -9,9 +9,9 @@ class MatchingOnboardingScreen extends StatefulWidget {
   final bool fromInfoButton;
   
   const MatchingOnboardingScreen({
-    Key? key, 
+    super.key, 
     this.fromInfoButton = false
-  }) : super(key: key);
+  });
 
   @override
   State<MatchingOnboardingScreen> createState() => _MatchingOnboardingScreenState();

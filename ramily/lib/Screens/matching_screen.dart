@@ -13,7 +13,7 @@ const Color _kBackgroundColor = Color(0xFFF8F8F8); // Almost White
 const Color _kDarkText = Color(0xFF333333);        // Softer Black
 
 class MatchingScreen extends StatefulWidget {
-  const MatchingScreen({Key? key}) : super(key: key);
+  const MatchingScreen({super.key});
 
   @override
   State<MatchingScreen> createState() => _MatchingScreenState();
@@ -472,8 +472,8 @@ class _MatchingScreenState extends State<MatchingScreen> with SingleTickerProvid
   Color getMatchColor(int percentage) {
     if (percentage > 90) return _kAccentColor;
     if (percentage > 80) return _kTraditionsColor;
-    if (percentage > 70) return Color(0xFF8BC34A); // Light green
-    return Color(0xFF9E9E9E); // Grey
+    if (percentage > 70) return const Color(0xFF8BC34A); // Light green
+    return const Color(0xFF9E9E9E); // Grey
   }
 
   // Modified calculation function with caching
@@ -846,10 +846,10 @@ class _MatchingScreenState extends State<MatchingScreen> with SingleTickerProvid
   }
 
   Widget _buildLoadingState() {
-    return Center(
+    return const Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
-        children: const [
+        children: [
           SizedBox(
             width: 80,
             height: 80,
@@ -1157,7 +1157,7 @@ class _MatchingScreenState extends State<MatchingScreen> with SingleTickerProvid
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.description_outlined, size: 16, color: _kPrimaryColor),
+                  const Icon(Icons.description_outlined, size: 16, color: _kPrimaryColor),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Column(
@@ -1194,7 +1194,7 @@ class _MatchingScreenState extends State<MatchingScreen> with SingleTickerProvid
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(Icons.favorite_outline, size: 16, color: _kAccentColor),
+                const Icon(Icons.favorite_outline, size: 16, color: _kAccentColor),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Column(
@@ -1220,7 +1220,7 @@ class _MatchingScreenState extends State<MatchingScreen> with SingleTickerProvid
                               ),
                               child: Text(
                                 '${commonInterests.length}',
-                                style: TextStyle(
+                                style: const TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,
                                   color: _kAccentColor,
@@ -1256,7 +1256,7 @@ class _MatchingScreenState extends State<MatchingScreen> with SingleTickerProvid
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   if (isCommon) ...[
-                                    Icon(
+                                    const Icon(
                                       Icons.check_circle,
                                       size: 12,
                                       color: _kPrimaryColor,
@@ -1302,12 +1302,12 @@ class _MatchingScreenState extends State<MatchingScreen> with SingleTickerProvid
                       side: BorderSide(color: _kPrimaryColor.withOpacity(0.5)),
                     ),
                   ),
-                  child: Row(
+                  child: const Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(Icons.person_outline, size: 16),
-                      const SizedBox(width: 4),
-                      const Text('View Profile', style: TextStyle(fontSize: 13)),
+                      SizedBox(width: 4),
+                      Text('View Profile', style: TextStyle(fontSize: 13)),
                     ],
                   ),
                 ),
@@ -1327,12 +1327,12 @@ class _MatchingScreenState extends State<MatchingScreen> with SingleTickerProvid
                     ),
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   ),
-                  child: Row(
+                  child: const Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(Icons.connect_without_contact, size: 16),
-                      const SizedBox(width: 4),
-                      const Text('Connect', style: TextStyle(fontSize: 13)),
+                      SizedBox(width: 4),
+                      Text('Connect', style: TextStyle(fontSize: 13)),
                     ],
                   ),
                 ),
@@ -1573,7 +1573,7 @@ class _MatchingScreenState extends State<MatchingScreen> with SingleTickerProvid
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 if (isCommon) ...[
-                                  Icon(
+                                  const Icon(
                                     Icons.check_circle,
                                     size: 14,
                                     color: _kPrimaryColor,

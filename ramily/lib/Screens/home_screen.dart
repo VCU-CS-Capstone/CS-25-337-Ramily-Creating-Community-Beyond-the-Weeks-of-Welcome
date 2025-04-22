@@ -11,7 +11,7 @@ import 'matching_onboarding_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final String email;
-  const HomeScreen({Key? key, required this.email}) : super(key: key);
+  const HomeScreen({super.key, required this.email});
 
   @override
   _HomeScreenState createState() => _HomeScreenState();
@@ -150,7 +150,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: Text(
+              child: const Text(
                 'Cancel',
                 style: TextStyle(
                   color: constants.kDarkText,
@@ -330,7 +330,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                     const SizedBox(width: 4),
                     Text(
                       majorDisplay,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 14,
                         color: constants.kDarkText,
                       ),
@@ -354,24 +354,24 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               }
             },
             itemBuilder: (BuildContext context) => [
-              PopupMenuItem<String>(
+              const PopupMenuItem<String>(
                 value: 'edit_profile',
                 child: Row(
                   children: [
-                    const Icon(Icons.edit, color: constants.kVCUBlack, size: 20),
-                    const SizedBox(width: 12),
-                    const Text('Edit Profile'),
+                    Icon(Icons.edit, color: constants.kVCUBlack, size: 20),
+                    SizedBox(width: 12),
+                    Text('Edit Profile'),
                   ],
                 ),
               ),
               const PopupMenuDivider(),
-              PopupMenuItem<String>(
+              const PopupMenuItem<String>(
                 value: 'logout',
                 child: Row(
                   children: [
-                    const Icon(Icons.logout, color: constants.kVCURed, size: 20),
-                    const SizedBox(width: 12),
-                    const Text('Log Out'),
+                    Icon(Icons.logout, color: constants.kVCURed, size: 20),
+                    SizedBox(width: 12),
+                    Text('Log Out'),
                   ],
                 ),
               ),
@@ -510,11 +510,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   child: const Icon(Icons.check_circle, color: constants.kVCUGreen, size: 20),
                 ),
                 const SizedBox(width: 16),
-                Expanded(
+                const Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         "Verify Student ID",
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
@@ -531,7 +531,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                     ],
                   ),
                 ),
-                Text(
+                const Text(
                   "1 hr",
                   style: TextStyle(
                     color: constants.kDarkText,
@@ -649,7 +649,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                       const SizedBox(height: 4),
                       Text(
                         description,
-                        style: TextStyle(
+                        style: const TextStyle(
                           color: constants.kDarkText,
                           fontSize: 14,
                         ),
@@ -670,7 +670,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                     const SizedBox(width: 4),
                     Text(
                       date,
-                      style: TextStyle(
+                      style: const TextStyle(
                         color: constants.kDarkText,
                         fontSize: 12,
                       ),
@@ -684,7 +684,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                     const SizedBox(width: 4),
                     Text(
                       location,
-                      style: TextStyle(
+                      style: const TextStyle(
                         color: constants.kDarkText,
                         fontSize: 12,
                       ),

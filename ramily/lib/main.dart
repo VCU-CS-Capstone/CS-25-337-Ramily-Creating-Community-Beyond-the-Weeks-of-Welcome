@@ -31,7 +31,7 @@ class RamilyApp extends StatelessWidget {
     return MaterialApp(
       title: 'RAMily',
       theme: getAppTheme(),
-      home: LoginScreen(),
+      home: const LoginScreen(),
       debugShowCheckedModeBanner: false,
     );
   }
@@ -49,12 +49,10 @@ ThemeData getAppTheme() {
       primary: constants.kPrimaryColor,
       secondary: constants.kVCUPurple,
       surface: constants.kVCUWhite,
-      background: constants.kVCUWhite,
       error: constants.kVCURed,
       onPrimary: constants.kVCUWhite,
       onSecondary: constants.kVCUWhite,
       onSurface: constants.kDarkText,
-      onBackground: constants.kDarkText,
       onError: constants.kVCUWhite,
     ),
     
@@ -152,8 +150,8 @@ ThemeData getAppTheme() {
     
     // Checkbox theme
     checkboxTheme: CheckboxThemeData(
-      fillColor: MaterialStateProperty.resolveWith((states) {
-        if (states.contains(MaterialState.selected)) {
+      fillColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) {
           return constants.kVCUPurple;
         }
         return null;
