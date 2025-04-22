@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-// Import for color constants
+import 'main_navigator.dart'; // Import for color constants
 import 'chat_detail_screen.dart';
 import 'login_screen.dart';
 import 'profile_editor.dart';
@@ -10,7 +10,7 @@ import 'constants.dart';
 class ChatScreen extends StatelessWidget {
   final String email;
   
-  const ChatScreen({super.key, required this.email});
+  const ChatScreen({Key? key, required this.email}) : super(key: key);
   
   void _showSignOutDialog(BuildContext context) {
     showDialog(
@@ -119,24 +119,24 @@ class ChatScreen extends StatelessWidget {
                           }
                         },
                         itemBuilder: (BuildContext context) => [
-                          const PopupMenuItem<String>(
+                          PopupMenuItem<String>(
                             value: 'edit_profile',
                             child: Row(
                               children: [
-                                Icon(Icons.edit, color: kPrimaryColor, size: 20),
-                                SizedBox(width: 12),
-                                Text('Edit Profile'),
+                                const Icon(Icons.edit, color: kPrimaryColor, size: 20),
+                                const SizedBox(width: 12),
+                                const Text('Edit Profile'),
                               ],
                             ),
                           ),
                           const PopupMenuDivider(),
-                          const PopupMenuItem<String>(
+                          PopupMenuItem<String>(
                             value: 'logout',
                             child: Row(
                               children: [
-                                Icon(Icons.logout, color: kVCURed, size: 20),
-                                SizedBox(width: 12),
-                                Text('Log Out'),
+                                const Icon(Icons.logout, color: kVCURed, size: 20),
+                                const SizedBox(width: 12),
+                                const Text('Log Out'),
                               ],
                             ),
                           ),
@@ -162,7 +162,7 @@ class ChatScreen extends StatelessWidget {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const ChatDetailScreen(
+                          builder: (context) => ChatDetailScreen(
                             name: 'Rodney Ram',
                             message: 'Welcome to VCU!',
                           ),

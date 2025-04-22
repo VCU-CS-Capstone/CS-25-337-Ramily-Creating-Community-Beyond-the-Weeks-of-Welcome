@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-// Import for color constants
+import 'main_navigator.dart'; // Import for color constants
 import 'constants.dart'; 
 
 
@@ -8,10 +8,10 @@ class ChatDetailScreen extends StatefulWidget {
   final String message;
 
   const ChatDetailScreen({
-    super.key, 
+    Key? key, 
     required this.name, 
     required this.message,
-  });
+  }) : super(key: key);
 
   @override
   _ChatDetailScreenState createState() => _ChatDetailScreenState();
