@@ -470,9 +470,9 @@ class _MatchingScreenState extends State<MatchingScreen> with SingleTickerProvid
 
   // Helper function to get color based on match percentage
   Color getMatchColor(int percentage) {
-    if (percentage > 90) return _kAccentColor;
+    if (percentage > 90) return Color(0xFF8BC34A); // Light green
     if (percentage > 80) return _kTraditionsColor;
-    if (percentage > 70) return Color(0xFF8BC34A); // Light green
+    if (percentage > 70) return  _kSecondaryColor;
     return Color(0xFF9E9E9E); // Grey
   }
 
@@ -568,17 +568,24 @@ class _MatchingScreenState extends State<MatchingScreen> with SingleTickerProvid
     }
   }
 
+  int simplifiedMatchPercentage(User user){
+    double proximityScore = calculateProximityPoints(referenceMajor, user.major);
+    double interestScore = countMatchingInterests(referenceInterests, user.interests);
+    double totalScore = (proximityScore * majorMultiplier) + (interestScore * (1 - majorMultiplier));
+
+    return((totalScore * 100).round());
+  }
+
   // Match explanation modal
   void _showMatchExplanation(BuildContext context, User user, int matchPercentage) {
     // Calculate actual scores for explanation
     double proximityScore = calculateProximityPoints(referenceMajor, user.major);
     double interestScore = countMatchingInterests(referenceInterests, user.interests);
-    double totalScore = (proximityScore * majorMultiplier) + (interestScore * (1 - majorMultiplier));
-    
+
     // Format scores as percentages
     int majorPercentage = (proximityScore * 100).round();
     int interestsPercentage = (interestScore * 100).round();
-    int actualMatchPercentage = (totalScore * 100).round();
+    int actualMatchPercentage = simplifiedMatchPercentage(user);
     
     showModalBottomSheet(
       context: context,
@@ -784,7 +791,7 @@ class _MatchingScreenState extends State<MatchingScreen> with SingleTickerProvid
                   onChanged: (value) {
                     setState(() {
                       _filterValue = value;
-                      majorMultiplier = value;
+                      majorMultiplier = min(value, .99);
                       // Reset and reload matches with new weights
                       _clearScoreCache();
                       _displayedUsers = [];
@@ -968,6 +975,7 @@ class _MatchingScreenState extends State<MatchingScreen> with SingleTickerProvid
     required int matchPercentage,
     required int index,
   }) {
+    int simpleMatchPercentage = simplifiedMatchPercentage(user);
     // Handle profile picture or generate avatar
     Widget avatarWidget = _buildLetterAvatar(user.name);
     
@@ -1007,7 +1015,7 @@ class _MatchingScreenState extends State<MatchingScreen> with SingleTickerProvid
     }
 
     // Get color based on match percentage
-    Color matchColor = getMatchColor(matchPercentage);
+    Color matchColor = getMatchColor(simpleMatchPercentage);
     
     // Improve bio preview - truncate if needed
     String bioPreview = user.bio;
@@ -1114,7 +1122,7 @@ class _MatchingScreenState extends State<MatchingScreen> with SingleTickerProvid
                         ],
                       ),
                       child: Text(
-                        '$matchPercentage%',
+                        '$simpleMatchPercentage%',
                         style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
@@ -1386,6 +1394,8 @@ class _MatchingScreenState extends State<MatchingScreen> with SingleTickerProvid
 
   // New method to show detailed profile
   void _showDetailedProfile(BuildContext context, User user, int matchPercentage) {
+
+    int simpleMatchPercentage = simplifiedMatchPercentage(user);
     // Handle profile picture for detailed view
     Widget avatarWidget = _buildBigLetterAvatar(user.name);
     
@@ -1452,11 +1462,11 @@ class _MatchingScreenState extends State<MatchingScreen> with SingleTickerProvid
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
-                        color: getMatchColor(matchPercentage),
+                        color: getMatchColor(simpleMatchPercentage),
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Text(
-                        '$matchPercentage% Match',
+                        '$simpleMatchPercentage% Match',
                         style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
