@@ -49,7 +49,7 @@ Setup & Installation
 bash
 
 ```
-git clone https://github.com/yourusername/ramily.git
+https://github.com/VCU-CS-Capstone/CS-25-337-Ramily-Creating-Community-Beyond-the-Weeks-of-Welcome.git
 cd ramily
 ```
 
